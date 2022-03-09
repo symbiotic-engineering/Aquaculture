@@ -4,7 +4,7 @@ from typing import Tuple
 
 def sim(x: dict, p: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # merge input dicts
-    ins = x | p
+    ins = {**x, **p}
 
     # create objects
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
