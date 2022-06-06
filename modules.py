@@ -9,8 +9,12 @@ def sim(x: dict, p: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     # create objects
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
             ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'])
+
     wave_in = Wave(ins['wave_height'], ins['wave_period'])
-    pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_unit_cost'])
+
+    pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['stocking_density'], 
+            ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['loss_rate'],
+            ins['harvest_weight'], ins['env_params'])
 
     # run each module 
     wave_out = wave_climate(wec,wave_in)
@@ -55,14 +59,17 @@ def fish(wave: Wave, pen: Pen) -> float:
     assert(isinstance(wave,Wave))
     assert(isinstance(pen,Pen))
 
-    if wave.Hs < 1:
-        fish_yield = 1
+    if wave.Hs > 3:
+        extra_loss_rate = 0.1
     else:
-        fish_yield = 0.5
+        extra_loss_rate = 0
+
+    survival_rate = (1-(pen.loss_rate + extra_loss_rate))
+    fish_yield = pen.SD * survival_rate * pen.volume * pen.harvest_weight
+
     return fish_yield
 
 def environment(pen: Pen) -> float:
     assert(isinstance(pen,Pen))
-    
-    carrying_capacity = 1
-    return carrying_capacity
+
+    return pen.carrying_capacity
