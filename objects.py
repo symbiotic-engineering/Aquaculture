@@ -153,5 +153,5 @@ class Pen:
         length = self.n * self.D + self.spacing * (self.n-1)
         carrying_capacity = (self.O2_in - self.O2_min) * length * self.H * self.permeability * self.U_min / self.DO2
         print('carrying capacity: ', carrying_capacity)
-        return min(carrying_capacity, key=lambda x:float(x))
+        return min([carrying_capacity])
 
