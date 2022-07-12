@@ -1,4 +1,4 @@
-# aquaculture
+# Aquaculture
 This repository contains an "Optimization of offshore aquaculture with co-located wave energy", simulated through Python.
 This repository consists of the following files:
 - modules
