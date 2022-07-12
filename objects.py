@@ -124,7 +124,7 @@ class Pen:
         # Fish growth as a function of time
         a = 0.038
         W_0 = 0
-        print(Temp)
+        #print(Temp)
         #integral = trapz( exp(Temp*self.tau), x=time )
         integral = Temp # fixme
         W = (W_0**(1/3) + a/3 * integral)**3
@@ -152,6 +152,6 @@ class Pen:
     def carrying_capacity(self) -> float:
         length = self.n * self.D + self.spacing * (self.n-1)
         carrying_capacity = (self.O2_in - self.O2_min) * length * self.H * self.permeability * self.U_min / self.DO2
-        print('carrying capacity: ', carrying_capacity)
+        #print('carrying capacity: ', carrying_capacity)
         return min([carrying_capacity])
 
