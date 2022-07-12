@@ -2,8 +2,52 @@ import numpy as np
 from objects import *
 from typing import Tuple
 
-def sim(x: dict, p: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def obj(x_in: dict, p: dict):
     # merge input dicts
+    wec, wave_in, pen = input_merge(x_in, p)
+
+    # run each module 
+    wave_out = wave_climate(wec,wave_in)
+    fish_yield = fish(wave_out,pen)
+    price = econ(wec, pen)
+
+    # outputs
+    cost_per_yield = price/fish_yield 
+    J = np.array(cost_per_yield)
+    
+    return J
+
+
+def ineq_constraint(x_in, p):
+    # merge input dicts
+    wec, wave_in, pen = input_merge(x_in, p)
+
+    # run each module 
+    wave_out = wave_climate(wec,wave_in)
+    pow = power(wec, wave_in)
+    carrying_capacity = environment(pen)
+
+    # outputs
+    g = np.array([pow, carrying_capacity])
+
+    return g
+
+
+def eq_constraint(x_in, p):
+    # merge input dicts
+    wec, wave_in, pen = input_merge(x_in, p)
+    
+    h = np.array([])
+        
+    return h
+
+def input_merge(x_in: dict, p: dict):
+    # merge input dicts
+    
+    x = {'capture_width': x_in[0],
+    'pen_diameter': x_in[1],
+    'pen_height': x_in[2]}
+    
     ins = {**x, **p}
 
     # create objects
@@ -15,22 +59,8 @@ def sim(x: dict, p: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['stocking_density'], 
             ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['loss_rate'],
             ins['harvest_weight'], ins['env_params'])
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish(wave_out,pen)
-    pow = power(wec, wave_in)
-    carrying_capacity = environment(pen)
-    price = econ(wec, pen)
-
-    # outputs
-    cost_per_yield = price/fish_yield 
-    J = np.array(cost_per_yield)
-    g = np.array([pow, carrying_capacity])
-    h = np.array([])
-
-    return J, g, h
-
+    
+    return wec, wave_in, pen
 
 def power(wec: WEC, wave: Wave) -> float:
     assert(isinstance(wec,WEC))
