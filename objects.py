@@ -45,7 +45,10 @@ class Wave:
 
 class Pen:
     def __init__(self, D: float, H: float, SD: float, n: float, spacing: float, 
-    unit_cost: float, loss_rate: float, harvest_weight: float, env_params: dict) -> None:
+                 unit_cost: float, loss_rate: float, harvest_weight: float, temp: float, 
+                 O2_in: float, O2_min: float, P_f: float, P_p: float, U_min: float, tau: float, 
+                 permeability: float, F_f: float, F_p: float, F_c: float, A_f: float, A_p: float,
+                 A_c: float, O_f: float, O_p: float, O_c: float, C_f: float, C_p: float, C_c: float) -> None:
         self.D = D 
         self.H = H
         self.SD = SD 
@@ -55,30 +58,31 @@ class Pen:
         self.unit_cost = unit_cost
         self.loss_rate = loss_rate
         self.harvest_weight = harvest_weight
-
-        self.O2_in = env_params['O2_in']
-        self.O2_min = env_params['O2_min']
-        self.P_f = env_params['P_f']
-        self.P_p = env_params['P_p']
-        self.U_min = env_params['U_min']
-        self.tau = env_params['tau']
-        self.permeability = env_params['permeability']
-
-        self.F_f = env_params['F_f']
-        self.F_p = env_params['F_p']
-        self.F_c = env_params['F_c']
-
-        self.A_f = env_params['A_f']
-        self.A_p = env_params['A_p']
-        self.A_c = env_params['A_c']
+        self.temp = temp
         
-        self.O_f = env_params['O_f']
-        self.O_p = env_params['O_p']
-        self.O_c = env_params['O_c']
+        self.O2_in = O2_in
+        self.O2_min = O2_min
+        self.P_f = P_f
+        self.P_p = P_p
+        self.U_min = U_min
+        self.tau = tau
+        self.permeability = permeability
+
+        self.F_f = F_f
+        self.F_p = F_p
+        self.F_c = F_c
+
+        self.A_f = A_f
+        self.A_p = A_p
+        self.A_c = A_c
         
-        self.C_f = env_params['C_f']
-        self.C_p = env_params['C_p']
-        self.C_c = env_params['C_c']
+        self.O_f = O_f
+        self.O_p = O_p
+        self.O_c = O_c
+        
+        self.C_f = C_f
+        self.C_p = C_p
+        self.C_c = C_c
         
 
     @property
@@ -119,7 +123,7 @@ class Pen:
         T_min = 4
         T_bar = (T_max+T_min)/2
         T_amp = (T_max-T_min)/2
-        Temp = T_bar + T_amp * cos(w * time + phi)
+        Temp = self.temp #T_bar + T_amp * cos(w * time + phi)
 
         # Fish growth as a function of time
         a = 0.038
