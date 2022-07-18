@@ -6,6 +6,6 @@ This repository consists of the following files:
 - run_sim
 - param_sweep
 
-\textbf{Sensitivity Analysis:} In order to run the "sensitivity analysis", you can open and run the param_sweep (.ipynb) file.
+Sensitivity Analysis: In order to run the "sensitivity analysis", you can open and run the param_sweep (.ipynb) file.
 
 In order to run the "Wave-powered Aquaculture" optimization code, you can open and run the run_sim (.ipynb) file.
