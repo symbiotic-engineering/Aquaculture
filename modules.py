@@ -138,6 +138,7 @@ def variable_lookup(var_category_names):
         var_list.append('U_min')
         var_list.append('wave_height')
         var_list.append('wave_period')
+        var_list.append('salinity')
     
     if any('p_consts' in i for i in var_category_names):
         var_list.append('wec_unit_cost')
