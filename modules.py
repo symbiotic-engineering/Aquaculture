@@ -135,10 +135,9 @@ def variable_lookup(var_category_names):
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
         var_list.append('O2_in')
-        var_list.append('min_current_speed')
+        var_list.append('U_min')
         var_list.append('wave_height')
         var_list.append('wave_period')
-        var_list.append('U_min')
     
     if any('p_consts' in i for i in var_category_names):
         var_list.append('wec_unit_cost')
@@ -199,10 +198,9 @@ def default_values(var_category_names):
         vals['temp'] = 1
         vals['salinity'] = 1
         vals['O2_in'] = 1
-        vals['min_current_speed'] = 1
+        vals['U_min'] = 1
         vals['wave_height'] = 2
         vals['wave_period'] = 5
-        vals['U_min'] = 1
     
     if any('p_consts' in i for i in var_category_names):
         vals['wec_unit_cost'] = 1000
