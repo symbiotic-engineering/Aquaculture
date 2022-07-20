@@ -113,7 +113,7 @@ def environment(pen: Pen) -> float:
 
 def variable_lookup(var_category_names):
     # input is a cell array containing some subset of the following categories:
-    # x_wec, x_wec_type, x_pen, p_pen, p_env, p_consts, p_fish
+    # x_wec, x_wec_type, x_pen, p_pen, p_env, p_wec, p_fish
     # output is a cell array with variable names matching the input categoeies.
 
     var_list = []
@@ -131,19 +131,20 @@ def variable_lookup(var_category_names):
         var_list.append('num_pens')
         var_list.append('spacing')
         var_list.append('stocking_density')
+        var_list.append('pen_unit_cost')
+        var_list.append('permeability')
         
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
         var_list.append('O2_in')
-        var_list.append('min_current_speed')
+        var_list.append('salinity')
         var_list.append('wave_height')
         var_list.append('wave_period')
         var_list.append('U_min')
+        
     
-    if any('p_consts' in i for i in var_category_names):
+    if any('p_wec' in i for i in var_category_names):
         var_list.append('wec_unit_cost')
-        var_list.append('pen_unit_cost')
-        var_list.append('permeability')
         var_list.append('capture_width_ratio_dict')
         var_list.append('wave_damping_dict')
     
@@ -199,12 +200,11 @@ def default_values(var_category_names):
         vals['temp'] = 1
         vals['salinity'] = 1
         vals['O2_in'] = 1
-        vals['min_current_speed'] = 1
+        vals['U_min'] = 1
         vals['wave_height'] = 2
         vals['wave_period'] = 5
-        vals['U_min'] = 1
     
-    if any('p_consts' in i for i in var_category_names):
+    if any('p_wec' in i for i in var_category_names):
         vals['wec_unit_cost'] = 1000
         vals['pen_unit_cost'] = 1000
         vals['permeability'] = 1
