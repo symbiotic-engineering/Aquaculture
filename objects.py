@@ -15,10 +15,13 @@ class WEC:
         self.wave_damping_dict = wave_damping_dict
         self.wec_type = wec_type
         self.unit_cost = unit_cost
+        
+        self.P_gen = []
 
     @property
     def price(self) -> float:
-        price = self.capture_width * self.unit_cost
+        #price = self.capture_width * self.unit_cost
+        price = self.P_gen * self.unit_cost
         return price
 
     @property
@@ -84,10 +87,12 @@ class Pen:
         self.C_p = C_p
         self.C_c = C_c
         
-
+        self.fish_yield = []
+    
     @property
     def price(self) -> float:
-        price = self.D * self.H * self.unit_cost
+        price = self.fish_yield * self.unit_cost
+        #price = self.D * self.H * self.unit_cost
         return price
 
     @property 
