@@ -10,6 +10,8 @@ def obj(x_in, x_name, p_in: dict):
     # run each module 
     wave_out = wave_climate(wec,wave_in)
     fish_yield = fish(wave_out,pen)
+    wec.P_gen = power(wec, wave_in)
+    
     price = econ(wec, pen)
 
     # outputs
@@ -25,11 +27,15 @@ def ineq_constraint(x_in, x_name, p):
 
     # run each module 
     wave_out = wave_climate(wec,wave_in)
-    pow = power(wec, wave_in)
+    fish_yield = fish(wave_out,pen)
+    P_gen = power(wec, wave_in)
     carrying_capacity = environment(pen)
+    
+    P_gen_cons = P_gen
+    fish_yield_cons =  carrying_capacity - fish_yield
 
     # outputs
-    g = np.array([pow, carrying_capacity])
+    g = np.array([P_gen_cons, fish_yield_cons])
 
     return g
 
@@ -53,10 +59,10 @@ def input_merge(x_in, x_name, p):
     ins = {**x, **p}
 
     # create objects
+    wave_in = Wave(ins['wave_height'], ins['wave_period'])
+    
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
             ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'])
-
-    wave_in = Wave(ins['wave_height'], ins['wave_period'])
 
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['stocking_density'], 
             ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['loss_rate'],
@@ -71,8 +77,9 @@ def input_merge(x_in, x_name, p):
 def power(wec: WEC, wave: Wave) -> float:
     assert(isinstance(wec,WEC))
     assert(isinstance(wave,Wave))
-
+    
     P_gen = wave.power * wec.capture_width * wec.capture_width_ratio
+
     return P_gen
 
 def econ(wec: WEC, pen: Pen) -> float:
@@ -94,16 +101,15 @@ def wave_climate(wec: WEC, wave: Wave) -> Wave:
 def fish(wave: Wave, pen: Pen) -> float:
     assert(isinstance(wave,Wave))
     assert(isinstance(pen,Pen))
-
+              
     if wave.Hs > 3:
         extra_loss_rate = 0.1
     else:
         extra_loss_rate = 0
 
     survival_rate = (1-(pen.loss_rate + extra_loss_rate))
-    fish_yield = pen.SD * survival_rate * pen.volume * pen.harvest_weight
-
-    return fish_yield
+    pen.fish_yield = pen.SD * survival_rate * pen.volume * pen.harvest_weight
+    return pen.fish_yield
 
 def environment(pen: Pen) -> float:
     assert(isinstance(pen,Pen))
@@ -142,31 +148,30 @@ def variable_lookup(var_category_names):
         var_list.append('wave_period')
         var_list.append('U_min')
         
-    
     if any('p_wec' in i for i in var_category_names):
         var_list.append('wec_unit_cost')
         var_list.append('capture_width_ratio_dict')
         var_list.append('wave_damping_dict')
     
     if any('p_fish' in i for i in var_category_names):
-        var_list.append('F_f')
-        var_list.append('F_p')
-        var_list.append('F_c')
-        var_list.append('A_f')
-        var_list.append('A_p')
-        var_list.append('A_c')
-        var_list.append('O_f')
-        var_list.append('O_p')
-        var_list.append('O_c')
-        var_list.append('C_f')
-        var_list.append('C_p')
-        var_list.append('C_c')
-        var_list.append('P_f')
-        var_list.append('P_p')
-        var_list.append('O2_min')
-        var_list.append('tau')
-        var_list.append('loss_rate')
-        var_list.append('harvest_weight')
+        var_list.append('F_f')             #Fraction of Fat in the Feed Mix [-]
+        var_list.append('F_p')             #Fraction of Protein in the Feed Mix [-]
+        var_list.append('F_c')             #Fraction of Carbohydrates in the Feed Mix [-]
+        var_list.append('A_f')             #Assimilated Fraction of Fat [-]
+        var_list.append('A_p')             #Assimilated Fraction of Protein [-]
+        var_list.append('A_c')             #Assimilated Fraction of Carbohydrate [-]
+        var_list.append('O_f')             #Oxygen Demand to Break Down Fat [gO2/gFat]
+        var_list.append('O_p')             #Oxygen Demand to Break Down Protein [gO2/gProtein]
+        var_list.append('O_c')             #Oxygen Demand to Break Down Carbohydrate [gO2/gCarbohydrate]
+        var_list.append('C_f')             #Fat's Specific Energy Content [cal/g]
+        var_list.append('C_p')             #Protein's Specific Energy Content [cal/g]
+        var_list.append('C_c')             #Carbohydrate's Specific Energy Content [cal/g]
+        var_list.append('P_f')             #Fat Content of Fish [-]
+        var_list.append('P_p')             #Protein Content of Fish [-]
+        var_list.append('O2_min')          #Dissolved Oxygen Threshold [%]
+        var_list.append('tau')             #Inverse Temperature Scale [1/C]
+        var_list.append('loss_rate')       #Fish Loss Rate [-]
+        var_list.append('harvest_weight')  #Fish Harvest Size [kg/fish]
     
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
@@ -178,58 +183,100 @@ def variable_lookup(var_category_names):
 def default_values(var_category_names):
     vals = {}
     wec_types = ['attenuator','terminator','point absorber']
-    capture_width_ratios = [0.5, 0.5, 0.5]
-    wave_dampings = [0.5, 0.5, 0.5]
+    capture_width_ratios = [0.16, 0.34, 0.35]  #[-]
+    wave_dampings = [0.5, 0.5, 0.5]            #[-]
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = 10
+        vals['capture_width'] = 30  #[m]
 
     if any('x_wec_type' in i for i in var_category_names):
         vals['wec_type'] = 'point absorber'
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = 1
-        vals['pen_height'] = 0.5
+        vals['pen_diameter'] = 30     #[m]
+        vals['pen_height'] = 15       #[m]
    
     if any('p_pen' in i for i in var_category_names):
-        vals['num_pens'] = 8
-        vals['spacing'] = 10
-        vals['stocking_density'] = 1
+        vals['num_pens'] = 18         #[-]
+        vals['spacing'] = 150         #[m]
+        vals['stocking_density'] = 20 #[kg/m^3]
         
     if any('x_env' in i for i in var_category_names):
-        vals['temp'] = 1
-        vals['salinity'] = 1
-        vals['O2_in'] = 1
-        vals['U_min'] = 1
-        vals['wave_height'] = 2
-        vals['wave_period'] = 5
+        vals['temp'] = 16          #[C]
+        vals['salinity'] = 33      #[PSU]
+        vals['O2_in'] = 8          #[mg/l]
+        vals['U_min'] = 0.25       #[m/s]
+        vals['wave_height'] = 2.65  #[m]
+        vals['wave_period'] = 8.33    #[s]
     
     if any('p_wec' in i for i in var_category_names):
-        vals['wec_unit_cost'] = 1000
-        vals['pen_unit_cost'] = 1000
-        vals['permeability'] = 1
+        vals['wec_unit_cost'] = 740*1000   #[$/kW] 'point absorber';  2130 'terminator'; 3150 'attenuator'
+        vals['pen_unit_cost'] = 4.30   #[$/kg]
+        vals['permeability'] = 0.8
         vals['capture_width_ratio_dict'] = dict(zip(wec_types, capture_width_ratios))
         vals['wave_damping_dict'] = dict(zip(wec_types, wave_dampings))
-    
-    if any('p_fish' in i for i in var_category_names):
-        vals['F_p'] = 1
-        vals['F_c'] = 1
-        vals['F_f'] = 1
-        vals['A_p'] = 1
-        vals['A_c'] = 1
-        vals['A_f'] = 1
-        vals['O_p'] = 1
-        vals['O_c'] = 1
-        vals['O_f'] = 1
-        vals['C_p'] = 1
-        vals['C_c'] = 1
-        vals['C_f'] = 1
-        vals['P_f'] = 1
-        vals['P_p'] = 1
+        
+    if any('p_fish_salmon' in i for i in var_category_names):
+        vals['F_p'] = 0.45
+        vals['F_c'] = 0.07
+        vals['F_f'] = 0.3
+        vals['A_p'] = 0.97
+        vals['A_c'] = 0.6
+        vals['A_f'] = 0.9
+        vals['O_p'] = 1.89
+        vals['O_c'] = 1.07
+        vals['O_f'] = 2.91
+        vals['C_p'] = 5650
+        vals['C_c'] = 4100
+        vals['C_f'] = 9450
+        vals['P_f'] = 0.18
+        vals['P_p'] = 0.18
         vals['O2_min'] = 0.9
-        vals['tau'] = 1
+        vals['tau'] = 0.08
         vals['loss_rate'] = 0.15
-        vals['harvest_weight'] = 1
-
+        vals['harvest_weight'] = 4
+    
+    '''
+    if any('p_fish_black_sea_bass' in i for i in var_category_names):
+        vals['F_p'] = 2
+        vals['F_c'] = 2
+        vals['F_f'] = 2
+        vals['A_p'] = 2
+        vals['A_c'] = 2
+        vals['A_f'] = 2
+        vals['O_p'] = 2
+        vals['O_c'] = 2
+        vals['O_f'] = 2
+        vals['C_p'] = 2000
+        vals['C_c'] = 2000
+        vals['C_f'] = 20000
+        vals['P_f'] = 2
+        vals['P_p'] = 2
+        vals['O2_min'] = 2
+        vals['tau'] = 2
+        vals['loss_rate'] = 2
+        vals['harvest_weight'] = 2
+    '''
+    
     #assert(fieldnames(vals) == variable_lookup(var_category_names));
     return vals
+
+def bnds_values(var_category_names):
+    bnds = {}
+
+    if any('x_wec' in i for i in var_category_names):
+        bnds['capture_width'] = (1 ,40)  #[m]
+    
+    if any('x_pen' in i for i in var_category_names):
+        bnds['pen_diameter'] = (10, 50)     #[m]
+        bnds['pen_height'] = (10, 30)       #[m]
+    
+    if any('x_env' in i for i in var_category_names):
+        bnds['temp'] = (7, 22)           #[C]
+        bnds['salinity'] = (26, 36)      #[PSU]
+        bnds['O2_in'] = (7, 10)          #[mg/l]
+        bnds['U_min'] = (0.01, 0.55)        #[m/s]
+        bnds['wave_height'] = (1, 5)     #[m]
+        bnds['wave_period'] = (1, 12)    #[s]
+    
+    return bnds
