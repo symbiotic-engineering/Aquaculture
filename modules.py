@@ -210,7 +210,7 @@ def default_values(var_category_names):
         vals['wave_period'] = 8.33    #[s]
     
     if any('p_wec' in i for i in var_category_names):
-        vals['wec_unit_cost'] = 740*1000   #[$/kW] 'point absorber';  2130 'terminator'; 3150 'attenuator'
+        vals['wec_unit_cost'] = 740   #[$/kW] 'point absorber';  2130 'terminator'; 3150 'attenuator'
         vals['pen_unit_cost'] = 4.30   #[$/kg]
         vals['permeability'] = 0.8
         vals['capture_width_ratio_dict'] = dict(zip(wec_types, capture_width_ratios))
