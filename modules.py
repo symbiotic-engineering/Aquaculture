@@ -184,7 +184,7 @@ def default_values(var_category_names):
     vals = {}
     wec_types = ['attenuator','terminator','point absorber']
     capture_width_ratios = [0.16, 0.34, 0.35]  #[-]
-    wave_dampings = [0.5, 0.5, 0.5]            #[-]
+    wave_dampings = [0, 0.13, 0.17]            #[-]
 
     if any('x_wec' in i for i in var_category_names):
         vals['capture_width'] = 30  #[m]
