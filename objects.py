@@ -4,12 +4,12 @@ import numpy as np
 from scipy.integrate import trapz
 
 class WEC:
-    def __init__(self, capture_width: float, 
+    def __init__(self, capture_width: Dict[str,float], 
                 capture_width_ratio_dict: Dict[str,float], 
                 wave_damping_dict: Dict[str,float], 
                 wec_type: str,
                 unit_cost: float) -> None:
-
+        
         self.capture_width = capture_width
         self.capture_width_ratio_dict = capture_width_ratio_dict
         self.wave_damping_dict = wave_damping_dict
@@ -87,18 +87,21 @@ class Pen:
         self.C_p = C_p
         self.C_c = C_c
         
-        self.fish_yield = []
     
     @property
     def price(self) -> float:
-        price = self.fish_yield * self.unit_cost
-        #price = self.D * self.H * self.unit_cost
+        price = self.D * self.H * self.unit_cost
         return price
 
     @property 
     def volume(self) -> float:
         volume = pi * self.D**2 / 4 * self.H
         return volume
+    
+    @property 
+    def power(self) -> float:
+        power = 200000  #W  
+        return power
 
     @property 
     def DO2(self) -> float:
