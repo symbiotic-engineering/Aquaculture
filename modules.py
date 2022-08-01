@@ -4,7 +4,7 @@ from typing import Tuple
 
 def obj(x_in, x_name, p_in: dict):
     # merge input dicts
-    #print(x_in, x_name, p_in)
+    
     wec, wave_in, pen = input_merge(x_in, x_name, p_in)
 
     # run each module 
@@ -17,7 +17,7 @@ def obj(x_in, x_name, p_in: dict):
     # outputs
     cost_per_yield = price/fish_yield 
     J = np.array(cost_per_yield)
-    
+    #print(x_in, price, wec.P_gen)
     return J
 
 
@@ -31,7 +31,7 @@ def ineq_constraint(x_in, x_name, p):
     P_gen = power(wec, wave_in)
     carrying_capacity = environment(pen)
     
-    P_gen_cons = P_gen
+    P_gen_cons = P_gen - pen.power
     fish_yield_cons =  carrying_capacity - fish_yield
 
     # outputs
@@ -55,7 +55,7 @@ def input_merge(x_in, x_name, p):
     x = {}
     for i in range(len(x_list)):
         x[x_list[i]] = x_in[i]
-    
+
     ins = {**x, **p}
 
     # create objects
@@ -79,7 +79,7 @@ def power(wec: WEC, wave: Wave) -> float:
     assert(isinstance(wave,Wave))
     
     P_gen = wave.power * wec.capture_width * wec.capture_width_ratio
-
+    
     return P_gen
 
 def econ(wec: WEC, pen: Pen) -> float:
@@ -126,7 +126,7 @@ def variable_lookup(var_category_names):
     if any('x_wec' in i for i in var_category_names):
         var_list.append('capture_width')
 
-    if any('x_wec_type' in i for i in var_category_names):
+    if any('x_type_wec' in i for i in var_category_names):
         var_list.append('wec_type')
         
     if any('x_pen' in i for i in var_category_names):
@@ -189,7 +189,7 @@ def default_values(var_category_names):
     if any('x_wec' in i for i in var_category_names):
         vals['capture_width'] = 30  #[m]
 
-    if any('x_wec_type' in i for i in var_category_names):
+    if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = 'point absorber'
         
     if any('x_pen' in i for i in var_category_names):
@@ -211,7 +211,7 @@ def default_values(var_category_names):
     
     if any('p_wec' in i for i in var_category_names):
         vals['wec_unit_cost'] = 740   #[$/kW] 'point absorber';  2130 'terminator'; 3150 'attenuator'
-        vals['pen_unit_cost'] = 4.30   #[$/kg]
+        vals['pen_unit_cost'] = 100   #[$/m^2]?
         vals['permeability'] = 0.8
         vals['capture_width_ratio_dict'] = dict(zip(wec_types, capture_width_ratios))
         vals['wave_damping_dict'] = dict(zip(wec_types, wave_dampings))
@@ -265,7 +265,7 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1 ,40)  #[m]
+        bnds['capture_width'] = (1, 40)  #[m]
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 50)     #[m]
