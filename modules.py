@@ -17,7 +17,7 @@ def obj(x_in, x_name, p_in: dict):
     # outputs
     cost_per_yield = price/fish_yield 
     J = np.array(cost_per_yield)
-    #print(x_in, price, wec.P_gen)
+    #print(x_in, price, J)
     return J
 
 
@@ -32,7 +32,8 @@ def ineq_constraint(x_in, x_name, p):
     carrying_capacity = environment(pen)
     
     P_gen_cons = P_gen - pen.power
-    fish_yield_cons =  carrying_capacity - fish_yield
+    fish_yield_cons = carrying_capacity - fish_yield
+    print(x_in, carrying_capacity, fish_yield)
 
     # outputs
     g = np.array([P_gen_cons, fish_yield_cons])
@@ -210,7 +211,7 @@ def default_values(var_category_names):
         vals['wave_period'] = 8.33    #[s]
     
     if any('p_wec' in i for i in var_category_names):
-        vals['wec_unit_cost'] = 740   #[$/kW] 'point absorber';  2130 'terminator'; 3150 'attenuator'
+        vals['wec_unit_cost'] = 0.45   #[$/kWh] 'point absorber'
         vals['pen_unit_cost'] = 100   #[$/m^2]?
         vals['permeability'] = 0.8
         vals['capture_width_ratio_dict'] = dict(zip(wec_types, capture_width_ratios))
@@ -268,8 +269,8 @@ def bnds_values(var_category_names):
         bnds['capture_width'] = (1, 40)  #[m]
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (10, 50)     #[m]
-        bnds['pen_height'] = (10, 30)       #[m]
+        bnds['pen_diameter'] = (3, 50)     #[m]
+        bnds['pen_height'] = (5, 30)       #[m]
     
     if any('x_env' in i for i in var_category_names):
         bnds['temp'] = (7, 22)           #[C]
