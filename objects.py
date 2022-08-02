@@ -21,7 +21,9 @@ class WEC:
     @property
     def price(self) -> float:
         #price = self.capture_width * self.unit_cost
-        price = self.P_gen * self.unit_cost
+        beta_wec = 0.95 * 0.98                      #For RM3 (device availability * transmission efficiency)
+        AEP = self.P_gen * 0.001 * 8766 * beta_wec  #Annual Energy Production [kWh]
+        price = AEP * self.unit_cost
         return price
 
     @property
@@ -100,7 +102,7 @@ class Pen:
     
     @property 
     def power(self) -> float:
-        power = 200000  #W  
+        power = 50000  # Continuous Power [W]
         return power
 
     @property 
@@ -124,6 +126,7 @@ class Pen:
 
         # Water temperature as a function of time
         time = np.linspace(0,51,1) # time vector [weeks]
+        print('time', time)
         T = 52                  # period [weeks]
         w = 2*pi/T              # frequency [1/weeks]
         phi = 2*pi/3            # phase offset [-]
@@ -131,14 +134,14 @@ class Pen:
         T_min = 4
         T_bar = (T_max+T_min)/2
         T_amp = (T_max-T_min)/2
-        Temp = self.temp #T_bar + T_amp * cos(w * time + phi)
+        Temp = T_bar + T_amp * cos(w * time + phi)  #self.temp
 
         # Fish growth as a function of time
         a = 0.038
         W_0 = 0
         #print(Temp)
         #integral = trapz( exp(Temp*self.tau), x=time )
-        integral = Temp # fixme
+        integral = exp(Temp*self.tau) * T           # Constant with time
         W = (W_0**(1/3) + a/3 * integral)**3
 
         # Growth rate as a function of time
@@ -157,6 +160,7 @@ class Pen:
 
         # Total respiratory oxygen demand of fish per day
         DO2 = DO2_p + DO2_f + DO2_c
+        print('DO2_p',DO2_p, 'DO2_f',DO2_f, 'DO2_c',DO2_c)
 
         return DO2
 
