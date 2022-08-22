@@ -1,10 +1,15 @@
 import numpy as np
 from objects import *
 from typing import Tuple
+    
 
 def obj(x_in, x_name, p_in: dict):
+    cost_per_yield, price, fish_yield = obj_terms(x_in, x_name, p_in)
+    J = np.array(cost_per_yield)
+    return J
+
+def obj_terms(x_in, x_name, p_in: dict):
     # merge input dicts
-    
     wec, wave_in, pen = input_merge(x_in, x_name, p_in)
 
     # run each module 
@@ -13,13 +18,12 @@ def obj(x_in, x_name, p_in: dict):
     wec.P_gen = power(wec, wave_in)
     
     price = econ(wec, pen)
-
+   
     # outputs
     cost_per_yield = price/fish_yield 
-    J = np.array(cost_per_yield)
-    #print(x_in, price, J)
-    return J
-
+    #print(x_in, price, fish_yield, cost_per_yield)
+    
+    return cost_per_yield, price, fish_yield
 
 def ineq_constraint(x_in, x_name, p):
     # merge input dicts
@@ -28,12 +32,13 @@ def ineq_constraint(x_in, x_name, p):
     # run each module 
     wave_out = wave_climate(wec,wave_in)
     fish_yield = fish(wave_out,pen)
-    P_gen = power(wec, wave_in)
+    wec.P_gen = power(wec, wave_in)
     carrying_capacity = environment(pen)
     
-    P_gen_cons = P_gen - pen.power
+    P_gen_cons = wec.annual_energy - pen.power
+    #P_gen_cons = wec.P_gen - pen.power
     fish_yield_cons = carrying_capacity - fish_yield
-    print(x_in, carrying_capacity, fish_yield)
+    #print(x_in, carrying_capacity, fish_yield, wec.annual_energy, pen.power)
 
     # outputs
     g = np.array([P_gen_cons, fish_yield_cons])
@@ -65,7 +70,7 @@ def input_merge(x_in, x_name, p):
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
             ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'])
 
-    pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['stocking_density'], 
+    pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stocking_density'], 
             ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['loss_rate'],
             ins['harvest_weight'], ins['temp'], 
             ins['O2_in'],ins['O2_min'],ins['P_f'],ins['P_p'],ins['U_min'],
@@ -74,6 +79,21 @@ def input_merge(x_in, x_name, p):
             ins['O_c'],ins['C_f'],ins['C_p'],ins['C_c'])
     
     return wec, wave_in, pen
+
+def plot_variable(x_in, x_name, p):
+    # merge input dicts
+    wec, wave_in, pen = input_merge(x_in, x_name, p)
+
+    # run each module 
+    wave_out = wave_climate(wec,wave_in)
+    fish_yield = fish(wave_out,pen)
+    wec.P_gen = power(wec, wave_in)
+    carrying_capacity = environment(pen)
+    
+    P_gen_cons = wec.annual_energy - pen.power
+    fish_yield_cons = carrying_capacity - fish_yield
+    pen.plot_variable
+    return
 
 def power(wec: WEC, wave: Wave) -> float:
     assert(isinstance(wec,WEC))
@@ -109,7 +129,7 @@ def fish(wave: Wave, pen: Pen) -> float:
         extra_loss_rate = 0
 
     survival_rate = (1-(pen.loss_rate + extra_loss_rate))
-    pen.fish_yield = pen.SD * survival_rate * pen.volume * pen.harvest_weight
+    pen.fish_yield = pen.n * pen.SD * survival_rate * pen.volume * pen.harvest_weight
     return pen.fish_yield
 
 def environment(pen: Pen) -> float:
@@ -140,6 +160,7 @@ def variable_lookup(var_category_names):
         var_list.append('stocking_density')
         var_list.append('pen_unit_cost')
         var_list.append('permeability')
+        var_list.append('pen_depth')
         
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
@@ -188,7 +209,7 @@ def default_values(var_category_names):
     wave_dampings = [0, 0.13, 0.17]            #[-]
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = 30  #[m]
+        vals['capture_width'] = 30    #[m]
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = 'point absorber'
@@ -200,19 +221,20 @@ def default_values(var_category_names):
     if any('p_pen' in i for i in var_category_names):
         vals['num_pens'] = 18         #[-]
         vals['spacing'] = 150         #[m]
-        vals['stocking_density'] = 20 #[kg/m^3]
+        vals['stocking_density'] = 10 #20 #[kg/m^3]
+        vals['pen_depth'] = 40 #80        #[m] [40 120]
         
     if any('x_env' in i for i in var_category_names):
-        vals['temp'] = 16          #[C]
-        vals['salinity'] = 33      #[PSU]
-        vals['O2_in'] = 8          #[mg/l]
-        vals['U_min'] = 0.25       #[m/s]
-        vals['wave_height'] = 2.65  #[m]
+        vals['temp'] = 16             #[C]
+        vals['salinity'] = 33         #[PSU]
+        vals['O2_in'] = 8             #[mg/l]
+        vals['U_min'] = 0.25          #[m/s]
+        vals['wave_height'] = 2.65    #[m]
         vals['wave_period'] = 8.33    #[s]
     
     if any('p_wec' in i for i in var_category_names):
         vals['wec_unit_cost'] = 0.45   #[$/kWh] 'point absorber'
-        vals['pen_unit_cost'] = 100   #[$/m^2]?
+        vals['pen_unit_cost'] = 100    #[$/m^2]?
         vals['permeability'] = 0.8
         vals['capture_width_ratio_dict'] = dict(zip(wec_types, capture_width_ratios))
         vals['wave_damping_dict'] = dict(zip(wec_types, wave_dampings))
@@ -220,7 +242,7 @@ def default_values(var_category_names):
     if any('p_fish_salmon' in i for i in var_category_names):
         vals['F_p'] = 0.45
         vals['F_c'] = 0.07
-        vals['F_f'] = 0.3
+        vals['F_f'] = 0.15
         vals['A_p'] = 0.97
         vals['A_c'] = 0.6
         vals['A_f'] = 0.9
