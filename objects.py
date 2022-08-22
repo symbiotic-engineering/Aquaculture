@@ -2,7 +2,11 @@ from math import cos, exp, pi
 from typing import Dict
 import numpy as np
 from scipy.integrate import trapz
+from scipy.integrate import quad
+import math
+from matplotlib import pyplot as plt
 
+    
 class WEC:
     def __init__(self, capture_width: Dict[str,float], 
                 capture_width_ratio_dict: Dict[str,float], 
@@ -17,13 +21,16 @@ class WEC:
         self.unit_cost = unit_cost
         
         self.P_gen = []
+        
+    @property
+    def annual_energy(self) -> float:
+        beta_wec = 0.95 * 0.98                      #For RM3 (device availability * transmission efficiency)
+        AEP = self.P_gen * 0.001 * 8766 * beta_wec  #Annual Energy Production [kWh]
+        return AEP
 
     @property
     def price(self) -> float:
-        #price = self.capture_width * self.unit_cost
-        beta_wec = 0.95 * 0.98                      #For RM3 (device availability * transmission efficiency)
-        AEP = self.P_gen * 0.001 * 8766 * beta_wec  #Annual Energy Production [kWh]
-        price = AEP * self.unit_cost
+        price = self.annual_energy * self.unit_cost
         return price
 
     @property
@@ -49,13 +56,14 @@ class Wave:
         return P_wave
 
 class Pen:
-    def __init__(self, D: float, H: float, SD: float, n: float, spacing: float, 
+    def __init__(self, D: float, H: float, Depth: float, SD: float, n: float, spacing: float, 
                  unit_cost: float, loss_rate: float, harvest_weight: float, temp: float, 
                  O2_in: float, O2_min: float, P_f: float, P_p: float, U_min: float, tau: float, 
                  permeability: float, F_f: float, F_p: float, F_c: float, A_f: float, A_p: float,
                  A_c: float, O_f: float, O_p: float, O_c: float, C_f: float, C_p: float, C_c: float) -> None:
         self.D = D 
         self.H = H
+        self.Depth = Depth
         self.SD = SD 
         self.n = n 
         self.spacing = spacing
@@ -89,7 +97,19 @@ class Pen:
         self.C_p = C_p
         self.C_c = C_c
         
-    
+        self.time_i = []
+        self.W_i = []
+        self.W_dot_i = []
+        self.DO2_p_i = []
+        self.DO2_f_i = []
+        self.DO2_c_i = []
+        self.DO2_i = []
+        self.carrying_capacity_i = []
+        
+                
+    def integrand(self, t):
+        return math.exp(self.temp * self.tau)
+
     @property
     def price(self) -> float:
         price = self.D * self.H * self.unit_cost
@@ -102,7 +122,7 @@ class Pen:
     
     @property 
     def power(self) -> float:
-        power = 50000  # Continuous Power [W]
+        power = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
         return power
 
     @property 
@@ -125,8 +145,10 @@ class Pen:
         eps_star = eps - 0.15 * self.F_p * self.C_p * self.A_p / delta
 
         # Water temperature as a function of time
-        time = np.linspace(0,51,1) # time vector [weeks]
-        print('time', time)
+        time_i = np.linspace(1, 365, 365) #np.linspace(0, 51, 52) # time vector [weeks]
+        self.time_i = time_i;
+        
+        '''
         T = 52                  # period [weeks]
         w = 2*pi/T              # frequency [1/weeks]
         phi = 2*pi/3            # phase offset [-]
@@ -134,40 +156,76 @@ class Pen:
         T_min = 4
         T_bar = (T_max+T_min)/2
         T_amp = (T_max-T_min)/2
-        Temp = T_bar + T_amp * cos(w * time + phi)  #self.temp
+        '''
+        Temp = self.temp  #T_bar + T_amp * cos(w * time + phi)
 
         # Fish growth as a function of time
         a = 0.038
         W_0 = 0
-        #print(Temp)
-        #integral = trapz( exp(Temp*self.tau), x=time )
-        integral = exp(Temp*self.tau) * T           # Constant with time
-        W = (W_0**(1/3) + a/3 * integral)**3
+        W_i = np.zeros(len(time_i))
+        W_dot_i = np.zeros(len(time_i))
+        DO2_p_i = np.zeros(len(time_i))
+        DO2_f_i = np.zeros(len(time_i))
+        DO2_c_i = np.zeros(len(time_i))
+        DO2_i = np.zeros(len(time_i))
+        
+        for i in range(len(time_i)):
+            time = time_i[i]
+            
+            integral = quad(self.integrand, 0, time)  
+            W = (W_0**(1/3) + a/3 * integral[0])**3
+            W_i[i] = W
+            
+            # Growth rate as a function of time
+            b = 2/3
+            W_dot = a * W**b * exp(Temp * self.tau)
+            W_dot_i[i] = W_dot
+            
+            # Rate of energy ingested by fish, cal/day
+            alpha = 11
+            gamma = 0.8
+            Q_r = 1/eps_star * (alpha * W**gamma + a * C_f_star * W**b) * exp(Temp*self.tau)
+            
+            # Respiratory oxygen demand with respect to protein, fat, and carb consumption of fish
+            DO2_p = (self.F_p * self.A_p * Q_r / delta - self.P_p * W_dot) * self.O_p
+            DO2_f = (self.F_f * self.A_f * Q_r / delta - self.P_f * W_dot) * self.O_f
+            DO2_c = self.F_c * self.A_c * Q_r / delta * self.O_c
 
-        # Growth rate as a function of time
-        b = 2/3
-        W_dot = a * W**b * exp(Temp * self.tau)
+            # Total respiratory oxygen demand of fish per day [g/day]
+            DO2 = DO2_p + DO2_f + DO2_c
+            
+            DO2_p_i[i] = DO2_p
+            DO2_f_i[i] = DO2_f
+            DO2_c_i[i] = DO2_c
+            DO2_i[i] = DO2
+        
+        self.W_i = W_i
+        self.W_dot_i = W_dot_i
+        self.DO2_p_i = DO2_p_i
+        self.DO2_f_i = DO2_f_i
+        self.DO2_c_i = DO2_c_i
+        self.DO2_i = DO2_i
 
-        # Rate of energy ingested by fish, cal/day
-        alpha = 11
-        gamma = 0.8
-        Q_r = 1/eps_star * (alpha * W**gamma + a * C_f_star * W**b) * exp(time*self.tau)
-
-        # Respiratory oxygen demand with respect to protein, fat, and carb consumption of fish
-        DO2_p = (self.F_p * self.A_p * Q_r / delta - self.P_p * W_dot) * self.O_p
-        DO2_f = (self.F_f * self.A_f * Q_r / delta - self.P_f * W_dot) * self.O_f
-        DO2_c = self.F_c * self.A_c * Q_r / delta * self.O_c
-
-        # Total respiratory oxygen demand of fish per day
-        DO2 = DO2_p + DO2_f + DO2_c
-        print('DO2_p',DO2_p, 'DO2_f',DO2_f, 'DO2_c',DO2_c)
-
-        return DO2
+        return DO2_i
 
     @property
     def carrying_capacity(self) -> float:
         length = self.n * self.D + self.spacing * (self.n-1)
-        carrying_capacity = (self.O2_in - self.O2_min) * length * self.H * self.permeability * self.U_min / self.DO2
-        #print('carrying capacity: ', carrying_capacity)
-        return min([carrying_capacity])
+        carrying_capacity_i = (self.O2_in - self.O2_min) * length * self.Depth * self.permeability * self.U_min / (self.DO2 / 1000)
+        
+        self.carrying_capacity_i = carrying_capacity_i
+        
+        return carrying_capacity_i[-1]
 
+    @property
+    def plot_variable(self):
+        fig, ax = plt.subplots(figsize=(8,6))
+        ax.plot(self.time_i, self.W_i, label='W')
+        ax.set(xlabel='time [day]', ylabel='Fish growth (W [g/day])');
+        ax.legend()
+        
+        
+        fig, ax = plt.subplots(figsize=(8,6))
+        ax.plot(self.time_i, self.DO2_i / 1000 , label='DO2')
+        ax.set(xlabel='time [day]', ylabel='DO2 [kg/day]');
+        ax.legend()
