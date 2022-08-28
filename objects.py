@@ -109,17 +109,17 @@ class Pen:
                 
     def integrand(self, t):
         return math.exp(self.temp * self.tau)
-
-    @property
-    def price(self) -> float:
-        price = self.D * self.H * self.unit_cost
-        return price
-
+    
     @property 
     def volume(self) -> float:
         volume = pi * self.D**2 / 4 * self.H
         return volume
-    
+
+    @property
+    def price(self) -> float:
+        price = self.volume * self.unit_cost
+        return price
+
     @property 
     def power(self) -> float:
         power = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
