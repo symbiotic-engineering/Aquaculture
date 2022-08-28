@@ -61,7 +61,7 @@ def input_merge(x_in, x_name, p):
     x = {}
     for i in range(len(x_list)):
         x[x_list[i]] = x_in[i]
-
+ 
     ins = {**x, **p}
 
     # create objects
@@ -70,7 +70,7 @@ def input_merge(x_in, x_name, p):
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
             ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'])
 
-    pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stocking_density'], 
+    pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
             ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['loss_rate'],
             ins['harvest_weight'], ins['temp'], 
             ins['O2_in'],ins['O2_min'],ins['P_f'],ins['P_p'],ins['U_min'],
@@ -153,14 +153,14 @@ def variable_lookup(var_category_names):
     if any('x_pen' in i for i in var_category_names):
         var_list.append('pen_diameter')
         var_list.append('pen_height')
+        var_list.append('spacing')
+        var_list.append('stock_density')
+        var_list.append('pen_depth')
 
     if any('p_pen' in i for i in var_category_names):
         var_list.append('num_pens')
-        var_list.append('spacing')
-        var_list.append('stocking_density')
         var_list.append('pen_unit_cost')
         var_list.append('permeability')
-        var_list.append('pen_depth')
         
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
@@ -204,60 +204,60 @@ def variable_lookup(var_category_names):
 
 def default_values(var_category_names):
     vals = {}
-    wec_types = ['attenuator','terminator','point absorber']
-    capture_width_ratios = [0.16, 0.34, 0.35]  #[-]
-    wave_dampings = [0, 0.13, 0.17]            #[-]
+    wec_types = (['attenuator','terminator','point absorber'], '[-]')
+    capture_width_ratios = ([0.16, 0.34, 0.35], '[-]') 
+    wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = 30    #[m]
+        vals['capture_width'] = (30, '[m]')     
 
     if any('x_type_wec' in i for i in var_category_names):
-        vals['wec_type'] = 'point absorber'
+        vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = 30     #[m]
-        vals['pen_height'] = 15       #[m]
+        vals['pen_diameter'] = (30, '[m]')      
+        vals['pen_height'] = (15, '[m]')        
+        vals['spacing'] = (150, '[m]')          
+        vals['stock_density'] = (10 , '[kg/m^3]') 
+        vals['pen_depth'] = (80, '[m]')         
    
     if any('p_pen' in i for i in var_category_names):
-        vals['num_pens'] = 18         #[-]
-        vals['spacing'] = 150         #[m]
-        vals['stocking_density'] = 10 #20 #[kg/m^3]
-        vals['pen_depth'] = 40 #80        #[m] [40 120]
+        vals['num_pens'] = (18, '[-]')          
         
     if any('x_env' in i for i in var_category_names):
-        vals['temp'] = 16             #[C]
-        vals['salinity'] = 33         #[PSU]
-        vals['O2_in'] = 8             #[mg/l]
-        vals['U_min'] = 0.25          #[m/s]
-        vals['wave_height'] = 2.65    #[m]
-        vals['wave_period'] = 8.33    #[s]
+        vals['temp'] = (16, 'C')               
+        vals['salinity'] = (33, '[PSU]')        
+        vals['O2_in'] = (8,'[mg/l]')            
+        vals['U_min'] = (0.25,'[m/s]')          
+        vals['wave_height'] = (2.65, '[m]')     
+        vals['wave_period'] = (8.33, '[s]')     
     
     if any('p_wec' in i for i in var_category_names):
-        vals['wec_unit_cost'] = 0.45   #[$/kWh] 'point absorber'
-        vals['pen_unit_cost'] = 100    #[$/m^2]?
-        vals['permeability'] = 0.8
-        vals['capture_width_ratio_dict'] = dict(zip(wec_types, capture_width_ratios))
-        vals['wave_damping_dict'] = dict(zip(wec_types, wave_dampings))
+        vals['wec_unit_cost'] = (0.45, '[$/kWh]')   # 'point absorber'
+        vals['pen_unit_cost'] = (100, '[$/m^3]')    # 80 $/m^3 for net pen + 20 $/m^3 for mooring
+        vals['permeability'] = (0.8, '[-]')
+        vals['capture_width_ratio_dict'] = (dict(zip(wec_types[0], capture_width_ratios[0])), '[-]')
+        vals['wave_damping_dict'] = (dict(zip(wec_types[0], wave_dampings[0])), '[-]')
         
     if any('p_fish_salmon' in i for i in var_category_names):
-        vals['F_p'] = 0.45
-        vals['F_c'] = 0.07
-        vals['F_f'] = 0.15
-        vals['A_p'] = 0.97
-        vals['A_c'] = 0.6
-        vals['A_f'] = 0.9
-        vals['O_p'] = 1.89
-        vals['O_c'] = 1.07
-        vals['O_f'] = 2.91
-        vals['C_p'] = 5650
-        vals['C_c'] = 4100
-        vals['C_f'] = 9450
-        vals['P_f'] = 0.18
-        vals['P_p'] = 0.18
-        vals['O2_min'] = 0.9
-        vals['tau'] = 0.08
-        vals['loss_rate'] = 0.15
-        vals['harvest_weight'] = 4
+        vals['F_p'] = (0.45, '[-]')
+        vals['F_c'] = (0.07, '[-]')
+        vals['F_f'] = (0.15, '[-]')
+        vals['A_p'] = (0.97, '[-]')
+        vals['A_c'] = (0.6, '[-]')
+        vals['A_f'] = (0.9, '[-]')
+        vals['O_p'] = (1.89, '[gO2/gProtein]')
+        vals['O_c'] = (1.07, '[gO2/gCarbohydrate]')
+        vals['O_f'] = (2.91, '[gO2/gFat]')
+        vals['C_p'] = (5650, '[cal/g]')
+        vals['C_c'] = (4100, '[cal/g]')
+        vals['C_f'] = (9450, '[cal/g]')
+        vals['P_f'] = (0.18, '[-]')
+        vals['P_p'] = (0.18, '[-]')
+        vals['O2_min'] = (0.9, '[%]')
+        vals['tau'] = (0.08, '[1/C]')
+        vals['loss_rate'] = (0.15, '[-]')
+        vals['harvest_weight'] = (4, '[kg/fish]')
     
     '''
     if any('p_fish_black_sea_bass' in i for i in var_category_names):
@@ -288,18 +288,21 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 40)  #[m]
+        bnds['capture_width'] = (1, 40)     #[m]
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (3, 50)     #[m]
-        bnds['pen_height'] = (5, 30)       #[m]
+        bnds['pen_diameter'] = (3, 50)      #[m]
+        bnds['pen_height'] = (5, 30)        #[m]
+        bnds['spacing'] = (50, 300)         #[m]
+        bnds['stock_density'] = (1, 50)     #[kg/m^3]
+        bnds['pen_depth'] = (40, 120)       #[m] (40, 120)
     
     if any('x_env' in i for i in var_category_names):
-        bnds['temp'] = (7, 22)           #[C]
-        bnds['salinity'] = (26, 36)      #[PSU]
-        bnds['O2_in'] = (7, 10)          #[mg/l]
+        bnds['temp'] = (7, 22)              #[C]
+        bnds['salinity'] = (26, 36)         #[PSU]
+        bnds['O2_in'] = (7, 10)             #[mg/l]
         bnds['U_min'] = (0.01, 0.55)        #[m/s]
-        bnds['wave_height'] = (1, 5)     #[m]
-        bnds['wave_period'] = (1, 12)    #[s]
+        bnds['wave_height'] = (1, 5)        #[m]
+        bnds['wave_period'] = (1, 12)       #[s]
     
     return bnds
