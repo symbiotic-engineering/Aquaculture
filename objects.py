@@ -219,13 +219,13 @@ class Pen:
 
     @property
     def plot_variable(self):
-        fig, ax = plt.subplots(figsize=(8,6))
+        fig, ax = plt.subplots(figsize=(6,4))
         ax.plot(self.time_i, self.W_i, label='W')
         ax.set(xlabel='time [day]', ylabel='Fish growth (W [g/day])');
         ax.legend()
         
         
-        fig, ax = plt.subplots(figsize=(8,6))
+        fig, ax = plt.subplots(figsize=(6,4))
         ax.plot(self.time_i, self.DO2_i / 1000 , label='DO2')
         ax.set(xlabel='time [day]', ylabel='DO2 [kg/day]');
         ax.legend()
