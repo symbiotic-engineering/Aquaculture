@@ -294,7 +294,7 @@ def bnds_values(var_category_names):
         bnds['pen_diameter'] = (3, 50)      #[m]
         bnds['pen_height'] = (5, 30)        #[m]
         bnds['spacing'] = (50, 300)         #[m]
-        bnds['stock_density'] = (1, 50)     #[kg/m^3]
+        bnds['stock_density'] = (1, 30)     #[kg/m^3] 50
         bnds['pen_depth'] = (40, 120)       #[m] (40, 120)
     
     if any('x_env' in i for i in var_category_names):
