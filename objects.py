@@ -55,32 +55,13 @@ class Wave:
         P_wave = 1/32 * 1/pi * self.rho * self.g**2 * self.Hs**2 * self.T
         return P_wave
 
-class Pen:
-    def __init__(self, D: float, H: float, Depth: float, SD: float, n: float, spacing: float, 
-                 unit_cost: float, loss_rate: float, harvest_weight: float, temp: float, 
-                 O2_in: float, O2_min: float, P_f: float, P_p: float, U_min: float, tau: float, 
-                 permeability: float, F_f: float, F_p: float, F_c: float, A_f: float, A_p: float,
-                 A_c: float, O_f: float, O_p: float, O_c: float, C_f: float, C_p: float, C_c: float) -> None:
-        self.D = D 
-        self.H = H
-        self.Depth = Depth
-        self.SD = SD 
-        self.n = n 
-        self.spacing = spacing
-
-        self.unit_cost = unit_cost
-        self.loss_rate = loss_rate
-        self.harvest_weight = harvest_weight
-        self.temp = temp
-        
-        self.O2_in = O2_in
-        self.O2_min = O2_min
-        self.P_f = P_f
-        self.P_p = P_p
-        self.U_min = U_min
-        self.tau = tau
-        self.permeability = permeability
-
+class Fish:
+    def __init__(self, F_f, F_p, F_c, A_f, A_p, A_c, 
+                 O_f, O_p, O_c, C_f, C_p, C_c, 
+                 P_f, P_p, tau, loss_rate, harvest_weight, 
+                 O2_min, U_min, U_max, temp_min, temp_max, 
+                 salinity_min, salinity_max) :
+               
         self.F_f = F_f
         self.F_p = F_p
         self.F_c = F_c
@@ -97,36 +78,24 @@ class Pen:
         self.C_p = C_p
         self.C_c = C_c
         
-        self.time_i = []
-        self.W_i = []
-        self.W_dot_i = []
-        self.DO2_p_i = []
-        self.DO2_f_i = []
-        self.DO2_c_i = []
-        self.DO2_i = []
-        self.carrying_capacity_i = []
+        self.P_f = P_f
+        self.P_p = P_p
+        self.tau = tau
+        self.loss_rate = loss_rate
+        self.harvest_weight = harvest_weight
         
-                
+        self.O2_min = O2_min
+        self.U_min = U_min
+        self.U_max = U_max
+        self.temp_min = temp_min
+        self.temp_max = temp_max
+        self.salinity_min = salinity_min
+        self.salinity_max = salinity_max
+    
     def integrand(self, t):
         return math.exp(self.temp * self.tau)
     
-    @property 
-    def volume(self) -> float:
-        volume = pi * self.D**2 / 4 * self.H
-        return volume
-
-    @property
-    def price(self) -> float:
-        price = self.volume * self.unit_cost
-        return price
-
-    @property 
-    def power(self) -> float:
-        power = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
-        return power
-
-    @property 
-    def DO2(self) -> float:
+    def DO2(self, temp) -> float:
         # specific energy content of feed
         delta = self.F_f * self.C_f + self.F_p * self.C_p + self.F_c * self.C_c
 
@@ -157,7 +126,8 @@ class Pen:
         T_bar = (T_max+T_min)/2
         T_amp = (T_max-T_min)/2
         '''
-        Temp = self.temp  #T_bar + T_amp * cos(w * time + phi)
+        self.temp = temp
+        Temp = temp  #T_bar + T_amp * cos(w * time + phi)
 
         # Fish growth as a function of time
         a = 0.038
@@ -197,7 +167,7 @@ class Pen:
             DO2_p_i[i] = DO2_p
             DO2_f_i[i] = DO2_f
             DO2_c_i[i] = DO2_c
-            DO2_i[i] = DO2
+            DO2_i[i] = DO2 # [g/day] for a fish
         
         self.W_i = W_i
         self.W_dot_i = W_dot_i
@@ -205,27 +175,135 @@ class Pen:
         self.DO2_f_i = DO2_f_i
         self.DO2_c_i = DO2_c_i
         self.DO2_i = DO2_i
-
-        return DO2_i
-
-    @property
-    def carrying_capacity(self) -> float:
-        length = self.n * self.D + self.spacing * (self.n-1)
-        carrying_capacity_i = (self.O2_in - self.O2_min) * length * self.Depth * self.permeability * self.U_min / (self.DO2 / 1000)
         
-        self.carrying_capacity_i = carrying_capacity_i
+        #print("DO2_i=", DO2_i)
+
+        '''
+        W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)   # index of weight fish = 50 g
+        W_i_4kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 4000) # index of weight fish = 4 kg
+        OCR = (np.cumsum(self.DO2_i)[W_i_4kg] - np.cumsum(self.DO2_i)[W_i_50g]) / (4 - 0.05) #O2 consumption rate [kg_O2 / kg_fish]
+        '''
+        W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000) # index of weight fish = 1 kg
+        OCR = np.cumsum(self.DO2_i)[W_i_1kg]
+        #print('OCR', OCR)
         
-        return carrying_capacity_i[-1]
+        #total_DO2 = sum(self.DO2_i[W_i_50g:W_i_4kg])
+        
+        return OCR
 
     @property
     def plot_variable(self):
-        fig, ax = plt.subplots(figsize=(6,4))
-        ax.plot(self.time_i, self.W_i, label='W')
-        ax.set(xlabel='time [day]', ylabel='Fish growth (W [g/day])');
-        ax.legend()
+        ax1 = plt.subplot(4,1,1)
+        ax1.plot(self.time_i, self.W_i, label='W')
+        ax1.set(xlabel='time [day]', ylabel='Fish weight (W [g/day])');
+        ax1.legend()
+        plt.show()
+        
+        ax2 = plt.subplot(4,1,2)
+        ax2.plot(self.time_i, self.DO2_i , label='DO2')
+        ax2.set(xlabel='time [day]', ylabel='DO2 [kg/day]');
+        ax2.legend()
+        plt.show()
         
         
-        fig, ax = plt.subplots(figsize=(6,4))
-        ax.plot(self.time_i, self.DO2_i / 1000 , label='DO2')
-        ax.set(xlabel='time [day]', ylabel='DO2 [kg/day]');
-        ax.legend()
+        W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)
+        W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000)
+        W_i_2kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 2000)
+        W_i_3kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 3000)
+        W_i_4kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 4000)
+        
+        ax3 = plt.subplot(4,1,3)
+        ax3.plot(self.W_i/1000,  np.cumsum(self.DO2_i), 'b' , label='Total DO2')
+        '''
+        DO2_marker = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
+        DO2_marker[W_i_1kg] = np.cumsum(self.DO2_i[0:W_i_1kg])
+        DO2_marker[W_i_2kg] = np.cumsum(self.DO2_i[0:W_i_2kg])
+        DO2_marker[W_i_3kg] = np.cumsum(self.DO2_i[0:W_i_3kg])
+        DO2_marker[W_i_4kg] = np.cumsum(self.DO2_i[0:W_i_4kg])
+        ax3.plot(self.W_i,  DO2_marker, 'b-*')
+        '''
+        ref_DO2 = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
+        ref_DO2[W_i_1kg] = 445
+        ref_DO2[W_i_2kg] = 956
+        ref_DO2[W_i_3kg] = 1496
+        ref_DO2[W_i_4kg] = 2049
+        ax3.plot(self.W_i/1000,  ref_DO2, 'r-o', label='Ref Total DO2')
+        ax3.set(xlabel='Fish weight [kg]', ylabel='DO2 [kg]');
+        ax3.legend()
+        plt.show()
+        
+        
+        ax4 = plt.subplot(4,1,4)
+        ax4.plot(self.W_i[W_i_50g:], (1000000 / self.W_i[W_i_50g:]) * self.DO2_i[W_i_50g:], label='DO2/W for 1000kg fish')
+        ax4.set(xlabel='Fish weight (W [g/day])', ylabel='DO2 [kg/day]');
+        ax4.legend()
+        plt.show()
+        
+        '''
+        print('DO2 for 1kg fish',sum(self.DO2_i[W_i_50g:W_i_1kg]))
+        print('DO2 for 2kg fish',sum(self.DO2_i[W_i_50g:W_i_2kg]))
+        print('DO2 for 3kg fish',sum(self.DO2_i[W_i_50g:W_i_3kg]))
+        print('DO2 for 4kg fish',sum(self.DO2_i[W_i_50g:W_i_4kg]))
+        '''
+        
+class Pen:
+    def __init__(self, D: float, H: float, Depth: float, SD: float, n: float, spacing: float, 
+                 unit_cost: float, temp: float, O2_in: float, U: float, salinity: float,
+                 permeability: float) -> None:
+        self.D = D 
+        self.H = H
+        self.Depth = Depth
+        self.SD = SD 
+        self.n = n 
+        self.spacing = spacing
+
+        self.unit_cost = unit_cost
+        self.temp = temp
+        self.O2_in = O2_in
+        self.U = U
+        self.salinity = salinity
+        self.permeability = permeability
+        
+        self.time_i = []
+        self.W_i = []
+        self.W_dot_i = []
+        self.DO2_p_i = []
+        self.DO2_f_i = []
+        self.DO2_c_i = []
+        self.DO2_i = []
+        self.carrying_capacity_i = []
+    
+    @property 
+    def volume(self) -> float:
+        volume = pi * self.D**2 / 4 * self.H
+        return volume
+
+    @property
+    def price(self) -> float:
+        price = self.volume * self.unit_cost
+        return price
+
+    @property 
+    def power(self) -> float:
+        power = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
+        return power
+
+    
+    def carrying_capacity(self, fish) -> float:
+        length = self.n * self.D + self.spacing * (self.n-1)
+        #print('length',length)
+              
+        OT = (self.O2_in - fish.O2_min) * length * self.Depth * self.permeability * fish.U_min * 3600*24*365 # [kg_O2 / year]
+        
+        #print((self.O2_in - self.O2_min), length, self.Depth, self.permeability, self.U_min, self.DO2)
+        
+        #print('OT=' , OT)
+        
+        carrying_capacity = OT / fish.DO2(self.temp)
+        
+        self.carrying_capacity_value = carrying_capacity
+        #print('carrying_capacity=',carrying_capacity)
+        
+        return carrying_capacity
+
+    
