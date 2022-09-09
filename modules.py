@@ -10,11 +10,11 @@ def obj(x_in, x_name, p_in: dict):
 
 def obj_terms(x_in, x_name, p_in: dict):
     # merge input dicts
-    wec, wave_in, pen = input_merge(x_in, x_name, p_in)
+    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
 
     # run each module 
     wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish(wave_out,pen)
+    fish_yield = fish_yield_func(wave_out,pen, fish)
     wec.P_gen = power(wec, wave_in)
     
     price = econ(wec, pen)
@@ -27,30 +27,41 @@ def obj_terms(x_in, x_name, p_in: dict):
 
 def ineq_constraint(x_in, x_name, p):
     # merge input dicts
-    wec, wave_in, pen = input_merge(x_in, x_name, p)
+    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
 
     # run each module 
     wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish(wave_out,pen)
+    fish_yield = fish_yield_func(wave_out,pen, fish)
     wec.P_gen = power(wec, wave_in)
-    carrying_capacity = environment(pen)
+    carrying_capacity = carrying_capacity_func(pen, fish)
     
     P_gen_cons = wec.annual_energy - pen.power
     #P_gen_cons = wec.P_gen - pen.power
     fish_yield_cons = carrying_capacity - fish_yield
-    #print(x_in, carrying_capacity, fish_yield, wec.annual_energy, pen.power)
+    
+    env_Umin_cons = pen.U - fish.U_min
+    env_Umax_cons = fish.U_max - pen.U
+    env_tempmin_cons = pen.temp - fish.temp_min
+    env_tempmax_cons = fish.temp_max - pen.temp
+    env_salinitymin_cons = pen.salinity - fish.salinity_min
+    env_salinitymax_cons = fish.salinity_max - pen.salinity
+    env_O2_min_cons = pen.O2_in - fish.O2_min
+    
+    #print('cons:', P_gen_cons, fish_yield_cons)
 
     # outputs
-    g = np.array([P_gen_cons, fish_yield_cons])
+    g = np.array([P_gen_cons, fish_yield_cons, env_Umin_cons, env_Umax_cons,
+                  env_tempmin_cons, env_tempmax_cons, 
+                  env_salinitymin_cons, env_salinitymax_cons, env_O2_min_cons])
 
     return g
 
 
 def eq_constraint(x_in, x_name, p):
     # merge input dicts
-    wec, wave_in, pen = input_merge(x_in, x_name, p)
+    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
     
-    h = np.array([])
+    h = np.array([0])
         
     return h
 
@@ -58,9 +69,15 @@ def input_merge(x_in, x_name, p):
     # merge input dicts
     
     x_list = variable_lookup(x_name)
+    
+    if 'x0_scale' in p:
+        scale = p['x0_scale']
+    else:
+        scale = np.ones(len(x_list))
+    
     x = {}
     for i in range(len(x_list)):
-        x[x_list[i]] = x_in[i]
+        x[x_list[i]] = x_in[i]*scale[i]
  
     ins = {**x, **p}
 
@@ -71,28 +88,32 @@ def input_merge(x_in, x_name, p):
             ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'])
 
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
-            ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['loss_rate'],
-            ins['harvest_weight'], ins['temp'], 
-            ins['O2_in'],ins['O2_min'],ins['P_f'],ins['P_p'],ins['U_min'],
-            ins['tau'],ins['permeability'],ins['F_f'],ins['F_p'],
-            ins['F_c'],ins['A_f'],ins['A_p'],ins['A_c'],ins['O_f'],ins['O_p'],
-            ins['O_c'],ins['C_f'],ins['C_p'],ins['C_c'])
+              ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['temp'], 
+              ins['O2_in'], ins['U'], ins['salinity'], ins['permeability'])
     
-    return wec, wave_in, pen
+    fish = Fish(ins['F_f'], ins['F_p'], ins['F_c'], ins['A_f'], ins['A_p'], ins['A_c'],
+                ins['O_f'], ins['O_p'], ins['O_c'], ins['C_f'], ins['C_p'], ins['C_c'],
+                ins['P_f'], ins['P_p'], ins['tau'], ins['loss_rate'], ins['harvest_weight'], 
+                ins['O2_min'], ins['U_min'], ins['U_max'], ins['temp_min'], ins['temp_max'], 
+                ins['salinity_min'], ins['salinity_max'])
+                
+
+    
+    return wec, wave_in, pen, fish
 
 def plot_variable(x_in, x_name, p):
     # merge input dicts
-    wec, wave_in, pen = input_merge(x_in, x_name, p)
+    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
 
     # run each module 
     wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish(wave_out,pen)
+    fish_yield = fish_yield_func(wave_out,pen, fish)
     wec.P_gen = power(wec, wave_in)
-    carrying_capacity = environment(pen)
+    carrying_capacity = carrying_capacity_func(pen, fish)
     
     P_gen_cons = wec.annual_energy - pen.power
     fish_yield_cons = carrying_capacity - fish_yield
-    pen.plot_variable
+    fish.plot_variable
     return
 
 def power(wec: WEC, wave: Wave) -> float:
@@ -119,7 +140,7 @@ def wave_climate(wec: WEC, wave: Wave) -> Wave:
     wave_out = Wave(Hs,T)
     return wave_out
 
-def fish(wave: Wave, pen: Pen) -> float:
+def fish_yield_func(wave: Wave, pen: Pen, fish: Fish) -> float:
     assert(isinstance(wave,Wave))
     assert(isinstance(pen,Pen))
               
@@ -128,14 +149,16 @@ def fish(wave: Wave, pen: Pen) -> float:
     else:
         extra_loss_rate = 0
 
-    survival_rate = (1-(pen.loss_rate + extra_loss_rate))
-    pen.fish_yield = pen.n * pen.SD * survival_rate * pen.volume * pen.harvest_weight
+    survival_rate = (1-(fish.loss_rate + extra_loss_rate))
+    pen.fish_yield = pen.n * pen.SD * survival_rate * pen.volume #* pen.harvest_weight  # [kg]
+    #print("fish_yield", pen.fish_yield)
     return pen.fish_yield
 
-def environment(pen: Pen) -> float:
+def carrying_capacity_func(pen: Pen, fish: Fish) -> float:
     assert(isinstance(pen,Pen))
+    assert(isinstance(fish,Fish))
 
-    return pen.carrying_capacity
+    return pen.carrying_capacity(fish)
 
 
 def variable_lookup(var_category_names):
@@ -166,9 +189,9 @@ def variable_lookup(var_category_names):
         var_list.append('temp')
         var_list.append('O2_in')
         var_list.append('salinity')
+        var_list.append('U')
         var_list.append('wave_height')
         var_list.append('wave_period')
-        var_list.append('U_min')
         
     if any('p_wec' in i for i in var_category_names):
         var_list.append('wec_unit_cost')
@@ -190,11 +213,17 @@ def variable_lookup(var_category_names):
         var_list.append('C_c')             #Carbohydrate's Specific Energy Content [cal/g]
         var_list.append('P_f')             #Fat Content of Fish [-]
         var_list.append('P_p')             #Protein Content of Fish [-]
-        var_list.append('O2_min')          #Dissolved Oxygen Threshold [%]
         var_list.append('tau')             #Inverse Temperature Scale [1/C]
         var_list.append('loss_rate')       #Fish Loss Rate [-]
         var_list.append('harvest_weight')  #Fish Harvest Size [kg/fish]
-    
+        var_list.append('O2_min')          #Dissolved Oxygen Threshold [%]
+        var_list.append('U_min')
+        var_list.append('U_max')
+        var_list.append('temp_min')
+        var_list.append('temp_max')
+        var_list.append('salinity_min')
+        var_list.append('salinity_max')
+
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
     
@@ -209,27 +238,27 @@ def default_values(var_category_names):
     wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = (30, '[m]')     
+        vals['capture_width'] = (10, '[m]')     
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = (30, '[m]')      
+        vals['pen_diameter'] = (20, '[m]')     
         vals['pen_height'] = (15, '[m]')        
         vals['spacing'] = (150, '[m]')          
-        vals['stock_density'] = (10 , '[kg/m^3]') 
-        vals['pen_depth'] = (80, '[m]')         
+        vals['stock_density'] = (5 , '[kg/m^3]') #10
+        vals['pen_depth'] = (10, '[m]')         
    
     if any('p_pen' in i for i in var_category_names):
         vals['num_pens'] = (18, '[-]')          
         
     if any('x_env' in i for i in var_category_names):
         vals['temp'] = (16, 'C')               
-        vals['salinity'] = (33, '[PSU]')        
-        vals['O2_in'] = (8,'[mg/l]')            
-        vals['U_min'] = (0.25,'[m/s]')          
-        vals['wave_height'] = (2.65, '[m]')     
+        vals['salinity'] = (33, '[PSU]')
+        vals['U'] = (.2, '[m/s]')
+        vals['O2_in'] = (8,'[mg/l]')                      
+        vals['wave_height'] = (1.4, '[m]')     
         vals['wave_period'] = (8.33, '[s]')     
     
     if any('p_wec' in i for i in var_category_names):
@@ -254,10 +283,17 @@ def default_values(var_category_names):
         vals['C_f'] = (9450, '[cal/g]')
         vals['P_f'] = (0.18, '[-]')
         vals['P_p'] = (0.18, '[-]')
-        vals['O2_min'] = (0.9, '[%]')
         vals['tau'] = (0.08, '[1/C]')
         vals['loss_rate'] = (0.15, '[-]')
         vals['harvest_weight'] = (4, '[kg/fish]')
+        vals['O2_min'] = (4.41, '[mg/l]')
+        vals['U_min'] = (0.1,'[m/s]')
+        vals['U_max'] = (2,'[m/s]')
+        vals['temp_min'] = (2,'[C]')
+        vals['temp_max'] = (28,'[C]')
+        vals['salinity_min'] = (30,'[PSU]')
+        vals['salinity_max'] = (35,'[PSU]')
+        
     
     '''
     if any('p_fish_black_sea_bass' in i for i in var_category_names):
@@ -288,21 +324,21 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 40)     #[m]
+        bnds['capture_width'] = (1, 20)     #[m] 40
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (3, 50)      #[m]
+        bnds['pen_diameter'] = (10, 50)      #[m]
         bnds['pen_height'] = (5, 30)        #[m]
-        bnds['spacing'] = (50, 300)         #[m]
-        bnds['stock_density'] = (1, 30)     #[kg/m^3] 50
-        bnds['pen_depth'] = (40, 120)       #[m] (40, 120)
+        bnds['spacing'] = (100, 300)         #[m]
+        bnds['stock_density'] = (0.01, 20)     #[kg/m^3] 30
+        bnds['pen_depth'] = (1, 30)         #[m] 
     
     if any('x_env' in i for i in var_category_names):
         bnds['temp'] = (7, 22)              #[C]
         bnds['salinity'] = (26, 36)         #[PSU]
         bnds['O2_in'] = (7, 10)             #[mg/l]
-        bnds['U_min'] = (0.01, 0.55)        #[m/s]
-        bnds['wave_height'] = (1, 5)        #[m]
+        bnds['U'] = (0.01, 0.55)            #[m/s]
+        bnds['wave_height'] = (0.2, 3)      #[m]
         bnds['wave_period'] = (1, 12)       #[s]
     
     return bnds
