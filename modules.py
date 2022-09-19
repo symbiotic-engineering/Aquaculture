@@ -37,7 +37,7 @@ def ineq_constraint(x_in, x_name, p):
     
     P_gen_cons = wec.annual_energy - pen.power
     #P_gen_cons = wec.P_gen - pen.power
-    fish_yield_cons = carrying_capacity - fish_yield
+    fish_yield_cons = (carrying_capacity - fish_yield) * 0.001   #carrying_capacity/10000 gives a rational constraint value
     
     env_Umin_cons = pen.U - fish.U_min
     env_Umax_cons = fish.U_max - pen.U
@@ -143,13 +143,8 @@ def wave_climate(wec: WEC, wave: Wave) -> Wave:
 def fish_yield_func(wave: Wave, pen: Pen, fish: Fish) -> float:
     assert(isinstance(wave,Wave))
     assert(isinstance(pen,Pen))
-              
-    if wave.Hs > 3:
-        extra_loss_rate = 0.1
-    else:
-        extra_loss_rate = 0
 
-    survival_rate = (1-(fish.loss_rate + extra_loss_rate))
+    survival_rate = (1-fish.loss_rate)
     pen.fish_yield = pen.n * pen.SD * survival_rate * pen.volume #* pen.harvest_weight  # [kg]
     #print("fish_yield", pen.fish_yield)
     return pen.fish_yield
@@ -262,7 +257,7 @@ def default_values(var_category_names):
         vals['wave_period'] = (8.33, '[s]')     
     
     if any('p_wec' in i for i in var_category_names):
-        vals['wec_unit_cost'] = (0.45, '[$/kWh]')   # 'point absorber'
+        vals['wec_unit_cost'] = (0.45 * 1.19, '[$/kWh]')   # 'point absorber' * inflation rate from 2014 to 2022
         vals['pen_unit_cost'] = (100, '[$/m^3]')    # 80 $/m^3 for net pen + 20 $/m^3 for mooring
         vals['permeability'] = (0.8, '[-]')
         vals['capture_width_ratio_dict'] = (dict(zip(wec_types[0], capture_width_ratios[0])), '[-]')
@@ -330,7 +325,7 @@ def bnds_values(var_category_names):
         bnds['pen_diameter'] = (10, 50)      #[m]
         bnds['pen_height'] = (5, 30)        #[m]
         bnds['spacing'] = (100, 300)         #[m]
-        bnds['stock_density'] = (0.01, 20)     #[kg/m^3] 30
+        bnds['stock_density'] = (0.01, 20)     #[kg/m^3]
         bnds['pen_depth'] = (1, 30)         #[m] 
     
     if any('x_env' in i for i in var_category_names):
