@@ -193,15 +193,15 @@ class Fish:
 
     @property
     def plot_variable(self):
-        ax1 = plt.subplot(4,1,1)
-        ax1.plot(self.time_i, self.W_i, label='W')
-        ax1.set(xlabel='time [day]', ylabel='Fish weight (W [g/day])');
+        ax1 = plt.subplot(3,1,1)
+        ax1.plot(self.time_i, self.W_i/1000, label='W')
+        ax1.set(xlabel='time [day]', ylabel='Fish weight (W [kg])');
         ax1.legend()
         plt.show()
         
-        ax2 = plt.subplot(4,1,2)
+        ax2 = plt.subplot(3,1,2)
         ax2.plot(self.time_i, self.DO2_i , label='DO2')
-        ax2.set(xlabel='time [day]', ylabel='DO2 [kg/day]');
+        ax2.set(xlabel='time [day]', ylabel='DO2 [kg]');
         ax2.legend()
         plt.show()
         
@@ -212,7 +212,7 @@ class Fish:
         W_i_3kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 3000)
         W_i_4kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 4000)
         
-        ax3 = plt.subplot(4,1,3)
+        ax3 = plt.subplot(3,1,3)
         ax3.plot(self.W_i/1000,  np.cumsum(self.DO2_i), 'b' , label='Total DO2')
         '''
         DO2_marker = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
@@ -232,14 +232,14 @@ class Fish:
         ax3.legend()
         plt.show()
         
-        
+        '''
         ax4 = plt.subplot(4,1,4)
         ax4.plot(self.W_i[W_i_50g:], (1000000 / self.W_i[W_i_50g:]) * self.DO2_i[W_i_50g:], label='DO2/W for 1000kg fish')
-        ax4.set(xlabel='Fish weight (W [g/day])', ylabel='DO2 [kg/day]');
+        ax4.set(xlabel='Fish weight (W [g])', ylabel='DO2 [kg/day]');
         ax4.legend()
         plt.show()
         
-        '''
+        
         print('DO2 for 1kg fish',sum(self.DO2_i[W_i_50g:W_i_1kg]))
         print('DO2 for 2kg fish',sum(self.DO2_i[W_i_50g:W_i_2kg]))
         print('DO2 for 3kg fish',sum(self.DO2_i[W_i_50g:W_i_3kg]))
@@ -290,7 +290,10 @@ class Pen:
 
     
     def carrying_capacity(self, fish) -> float:
-        length = self.n * self.D + self.spacing * (self.n-1)
+        length = self.n * self.D   # Based on worst case
+        #length = self.n * self.D + self.spacing * (self.n-1) # From reference paper for a row farm
+        #length = self.D # for each pen
+
         #print('length',length)
               
         OT = (self.O2_in - fish.O2_min) * length * self.Depth * self.permeability * fish.U_min * 3600*24*365 # [kg_O2 / year]

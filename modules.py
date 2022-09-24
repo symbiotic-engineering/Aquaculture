@@ -37,7 +37,9 @@ def ineq_constraint(x_in, x_name, p):
     
     P_gen_cons = wec.annual_energy - pen.power
     #P_gen_cons = wec.P_gen - pen.power
-    fish_yield_cons = (carrying_capacity - fish_yield) * 0.001   #carrying_capacity/10000 gives a rational constraint value
+    
+    fish_yield_cons = (carrying_capacity - fish_yield) * 0.001   # Multiply 0.001 to get a similar order with P_gen_cons
+    #fish_yield_cons = (carrying_capacity - fish_yield / pen.n) * 0.001   #for each pen
     
     env_Umin_cons = pen.U - fish.U_min
     env_Umax_cons = fish.U_max - pen.U
@@ -233,16 +235,16 @@ def default_values(var_category_names):
     wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = (10, '[m]')     
+        vals['capture_width'] = (12, '[m]')     #10, 15
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = (30, '[m]')     
-        vals['pen_height'] = (15, '[m]')        
+        vals['pen_diameter'] = (20, '[m]')    #30 
+        vals['pen_height'] = (10, '[m]')      #15  
         vals['spacing'] = (150, '[m]')          
-        vals['stock_density'] = (10 , '[kg/m^3]')
+        vals['stock_density'] = (20 , '[kg/m^3]')
         vals['pen_depth'] = (10, '[m]')         
    
     if any('p_pen' in i for i in var_category_names):
@@ -267,8 +269,8 @@ def default_values(var_category_names):
         vals['F_p'] = (0.45, '[-]')
         vals['F_c'] = (0.07, '[-]')
         vals['F_f'] = (0.15, '[-]')
-        vals['A_p'] = (0.97, '[-]')
-        vals['A_c'] = (0.6, '[-]')
+        vals['A_p'] = (0.97, '[-]') #0.89
+        vals['A_c'] = (0.6, '[-]') #0.5
         vals['A_f'] = (0.9, '[-]')
         vals['O_p'] = (1.89, '[gO2/gProtein]')
         vals['O_c'] = (1.07, '[gO2/gCarbohydrate]')
@@ -280,7 +282,7 @@ def default_values(var_category_names):
         vals['P_p'] = (0.18, '[-]')
         vals['tau'] = (0.08, '[1/C]')
         vals['loss_rate'] = (0.15, '[-]')
-        vals['harvest_weight'] = (4, '[kg/fish]')
+        vals['harvest_weight'] = (4, '[kg/fish]') # can be between 4 [kg] to 6 [kg] 
         vals['O2_min'] = (4.41, '[mg/l]')
         vals['U_min'] = (0.1,'[m/s]')
         vals['U_max'] = (2,'[m/s]')
@@ -322,10 +324,10 @@ def bnds_values(var_category_names):
         bnds['capture_width'] = (1, 20)     #[m] 40
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (10, 50)      #[m]
-        bnds['pen_height'] = (5, 30)        #[m]
+        bnds['pen_diameter'] = (10, 40)      #[m]
+        bnds['pen_height'] = (3, 30)        #[m] (5,30)
         bnds['spacing'] = (100, 300)         #[m]
-        bnds['stock_density'] = (0.01, 20)     #[kg/m^3]
+        bnds['stock_density'] = (15, 30)     #[kg/m^3]
         bnds['pen_depth'] = (1, 30)         #[m] 
     
     if any('x_env' in i for i in var_category_names):
