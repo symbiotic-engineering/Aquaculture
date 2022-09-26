@@ -114,7 +114,7 @@ class Fish:
         eps_star = eps - 0.15 * self.F_p * self.C_p * self.A_p / delta
 
         # Water temperature as a function of time
-        time_i = np.linspace(1, 365, 365) #np.linspace(0, 51, 52) # time vector [weeks]
+        time_i = np.linspace(1, 365, 365) 
         self.time_i = time_i;
         
         '''
@@ -127,11 +127,11 @@ class Fish:
         T_amp = (T_max-T_min)/2
         '''
         self.temp = temp
-        Temp = temp  #T_bar + T_amp * cos(w * time + phi)
+        Temp = temp  
 
         # Fish growth as a function of time
         a = 0.038
-        W_0 = 0
+        W_0 = 0 #[g]
         W_i = np.zeros(len(time_i))
         W_dot_i = np.zeros(len(time_i))
         DO2_p_i = np.zeros(len(time_i))
@@ -201,7 +201,7 @@ class Fish:
         
         ax2 = plt.subplot(3,1,2)
         ax2.plot(self.time_i, self.DO2_i , label='DO2')
-        ax2.set(xlabel='time [day]', ylabel='DO2 [kg]');
+        ax2.set(xlabel='time [day]', ylabel='DO2 [g/day]');
         ax2.legend()
         plt.show()
         
@@ -228,7 +228,7 @@ class Fish:
         ref_DO2[W_i_3kg] = 1496
         ref_DO2[W_i_4kg] = 2049
         ax3.plot(self.W_i/1000,  ref_DO2, 'r-o', label='Ref Total DO2')
-        ax3.set(xlabel='Fish weight [kg]', ylabel='DO2 [kg]');
+        ax3.set(xlabel='Fish weight [kg]', ylabel='DO2 [g]');
         ax3.legend()
         plt.show()
         
