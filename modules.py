@@ -191,12 +191,6 @@ def variable_lookup(var_category_names):
         var_list.append('wave_period')
         
     if any('p_wec' in i for i in var_category_names):
-        var_list.append('U_min')
-        var_list.append('wave_height')
-        var_list.append('wave_period')
-        var_list.append('salinity')
-    
-    if any('p_consts' in i for i in var_category_names):
         var_list.append('wec_unit_cost')
         var_list.append('capture_width_ratio_dict')
         var_list.append('wave_damping_dict')
@@ -319,19 +313,6 @@ def default_values(var_category_names):
         vals['loss_rate'] = 2
         vals['harvest_weight'] = 2
     '''
-        vals['temp'] = 1
-        vals['salinity'] = 1
-        vals['O2_in'] = 1
-        vals['U_min'] = 1
-        vals['wave_height'] = 2
-        vals['wave_period'] = 5
-    
-    if any('p_consts' in i for i in var_category_names):
-        vals['wec_unit_cost'] = 1000
-        vals['pen_unit_cost'] = 1000
-        vals['permeability'] = 1
-        vals['capture_width_ratio_dict'] = dict(zip(wec_types, capture_width_ratios))
-        vals['wave_damping_dict'] = dict(zip(wec_types, wave_dampings))
     
     #assert(fieldnames(vals) == variable_lookup(var_category_names));
     return vals
