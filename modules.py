@@ -36,6 +36,7 @@ def ineq_constraint(x_in, x_name, p):
     carrying_capacity = carrying_capacity_func(pen, fish)
     
     P_gen_cons = wec.annual_energy - pen.power
+    #print('P_gen_cons=', wec.annual_energy, pen.power, P_gen_cons)
     #P_gen_cons = wec.P_gen - pen.power
     
     fish_yield_cons = (carrying_capacity - fish_yield) * 0.001   # Multiply 0.001 to get a similar order with P_gen_cons
@@ -235,16 +236,16 @@ def default_values(var_category_names):
     wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = (12, '[m]')     #10, 15
+        vals['capture_width'] = (12, '[m]')     #12
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = (20, '[m]')    #30 
-        vals['pen_height'] = (10, '[m]')      #15  
+        vals['pen_diameter'] = (20, '[m]')    #20 
+        vals['pen_height'] = (6, '[m]')      #6  
         vals['spacing'] = (150, '[m]')          
-        vals['stock_density'] = (20 , '[kg/m^3]')
+        vals['stock_density'] = (20 , '[kg/m^3]') #20
         vals['pen_depth'] = (10, '[m]')         
    
     if any('p_pen' in i for i in var_category_names):
