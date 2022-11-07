@@ -132,3 +132,5 @@ dmypy.json
 # GeoPandas, added by Gabriel
 geopandas/data
 *.tif
+/gis/pandas.ipynb
+/gis/geopandas_examples.ipynb
