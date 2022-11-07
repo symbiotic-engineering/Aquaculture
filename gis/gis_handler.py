@@ -1,28 +1,41 @@
+import geopandas
 import rasterio
 import rasterio.plot
 import matplotlib.pyplot as plt
+from shapely.geometry import Point
 
 color_map = 'turbo'
+crs = 32630
 
-class Handler:
+class GISHandler:
     
-    def __init__(self, files):
+    def __init__(self):
         self.raster_data = {}
-        load_raster_files(files)     
+        self.sample_points = geopandas.GeoDataFrame()
     
     def load_raster_files(self, files):
-        for key, src in files:
-            self.raster_data[key] = Raster(key, src)
-    
-    def list_rasters(self):
-        return list(self.raster_data.keys())
+        for key, src in files.items():
+            if key in self.raster_data:
+                raise Exception('raster {} already loaded!'.format(key))
+            else:
+                self.raster_data[key] = Raster(key, src)
     
     def display_raster(self, key):
         raster = self.raster_data[key]
         fig, ax = plt.subplots()
         ax = rasterio.plot.show(raster.data, extent=raster.extent, ax=ax, cmap=color_map)
     
-    def
+    def query(self, x, y, key):
+        id = ["{}-{}".format(x, y)]
+        geometry = [Point(x, y)]
+        point = geopandas.GeoDataFrame(id, geometry=geometry, crs=crs)
+        value = [x for x in self.raster_data[key].data.sample([(x, y)])]
+        point[key] = value
+        self.sample_points = self.sample_points.append(point)
+        return value[0]
+    
+    def record(x, y, value):
+        return 0
         
 class Raster:
     
