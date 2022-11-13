@@ -15,9 +15,9 @@ def obj_terms(x_in, x_name, p_in: dict):
     # run each module 
     wave_out = wave_climate(wec,wave_in)
     fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
+    power(wec, wave_in)
     
-    price = econ(wec, pen)
+    price = econ(wec, pen, fish)
    
     # outputs
     cost_per_yield = price/fish_yield 
@@ -32,7 +32,7 @@ def ineq_constraint(x_in, x_name, p):
     # run each module 
     wave_out = wave_climate(wec,wave_in)
     fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
+    power(wec, wave_in)
     carrying_capacity = carrying_capacity_func(pen, fish)
     
     P_gen_cons = wec.annual_energy - pen.power
@@ -98,7 +98,7 @@ def input_merge(x_in, x_name, p):
                 ins['O_f'], ins['O_p'], ins['O_c'], ins['C_f'], ins['C_p'], ins['C_c'],
                 ins['P_f'], ins['P_p'], ins['tau'], ins['loss_rate'], ins['harvest_weight'], 
                 ins['O2_min'], ins['U_min'], ins['U_max'], ins['temp_min'], ins['temp_max'], 
-                ins['salinity_min'], ins['salinity_max'])
+                ins['salinity_min'], ins['salinity_max'], ins['FCR'], ins['feed_unit_cost'])
                 
 
     
@@ -123,21 +123,9 @@ def power(wec: WEC, wave: Wave) -> float:
     assert(isinstance(wec,WEC))
     assert(isinstance(wave,Wave))
     
-    P_gen = wave.power * wec.capture_width * wec.capture_width_ratio
-    
-    return P_gen
-
-
-def P_rated(x_in, x_name, p_in: dict):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    
-    return wec.P_gen/wec.capture_width_ratio
+    wec.P_rated = wave.power * wec.capture_width 
+    wec.P_gen = wec.P_rated * wec.capture_width_ratio
+    return
     
 
 def carrying_capacity_print(x_in, x_name, p_in: dict):
@@ -147,16 +135,17 @@ def carrying_capacity_print(x_in, x_name, p_in: dict):
     # run each module 
     wave_out = wave_climate(wec,wave_in)
     fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
+    power(wec, wave_in)
     carrying_capacity = carrying_capacity_func(pen, fish)
     
     return pen.TPF_O2, carrying_capacity
 
-def econ(wec: WEC, pen: Pen) -> float:
+def econ(wec: WEC, pen: Pen, fish: Fish) -> float:
     assert(isinstance(wec,WEC))
     assert(isinstance(pen,Pen))
+    assert(isinstance(fish,Fish))
 
-    price = wec.price + pen.price
+    price = wec.price + pen.price + fish_feed_price(pen, fish)
     return price
 
 def wave_climate(wec: WEC, wave: Wave) -> Wave:
@@ -172,11 +161,17 @@ def fish_yield_func(wave: Wave, pen: Pen, fish: Fish) -> float:
     assert(isinstance(wave,Wave))
     assert(isinstance(pen,Pen))
 
-    survival_rate = (1-fish.loss_rate)
-    pen.fish_yield = pen.n * pen.SD * survival_rate * pen.volume #* pen.harvest_weight  # [kg]
+    survival_rate = (1-fish.loss_rate) 
+    pen.fish_yield = pen.biomass * survival_rate  # [kg]
     #print("fish_yield", pen.fish_yield)
     return pen.fish_yield
 
+def fish_feed_price(pen: Pen, fish: Fish) -> float:    
+    assert(isinstance(pen,Pen))
+    assert(isinstance(fish,Fish))
+
+    return pen.biomass * fish.FCR * fish.feed_unit_cost
+    
 def carrying_capacity_func(pen: Pen, fish: Fish) -> float:
     assert(isinstance(pen,Pen))
     assert(isinstance(fish,Fish))
@@ -246,6 +241,9 @@ def variable_lookup(var_category_names):
         var_list.append('temp_max')
         var_list.append('salinity_min')
         var_list.append('salinity_max')
+        var_list.append('FCR')             #Feed Conversion Ratio [kgFeed/kgFish]
+        var_list.append('feed_unit_cost')  #[$/kgFeed]
+        
 
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
@@ -316,6 +314,9 @@ def default_values(var_category_names):
         vals['temp_max'] = (28,'[C]')
         vals['salinity_min'] = (30,'[PSU]')
         vals['salinity_max'] = (35,'[PSU]')
+        vals['FCR'] = (1.15,'[kgFeed/kgFish]')
+        vals['feed_unit_cost'] = (1.48,'[$/kgFeed]')
+        
         
     
     '''

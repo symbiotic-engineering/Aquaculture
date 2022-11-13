@@ -21,6 +21,7 @@ class WEC:
         self.unit_cost = unit_cost
         
         self.P_gen = []
+        self.P_rated = []
         
     @property
     def annual_energy(self) -> float:
@@ -60,7 +61,7 @@ class Fish:
                  O_f, O_p, O_c, C_f, C_p, C_c, 
                  P_f, P_p, tau, loss_rate, harvest_weight, 
                  O2_min, U_min, U_max, temp_min, temp_max, 
-                 salinity_min, salinity_max) :
+                 salinity_min, salinity_max, FCR, feed_unit_cost) :
                
         self.F_f = F_f
         self.F_p = F_p
@@ -91,6 +92,9 @@ class Fish:
         self.temp_max = temp_max
         self.salinity_min = salinity_min
         self.salinity_max = salinity_max
+        
+        self.FCR = FCR
+        self.feed_unit_cost = feed_unit_cost
         
         self.time_i = []
         self.W_i = []
@@ -184,7 +188,7 @@ class Fish:
         #print('OCR', OCR)
                 
         return OCR
-
+    
     @property
     def plot_variable(self):
         ax1 = plt.subplot(3,1,1)
@@ -251,13 +255,18 @@ class Pen:
         return volume
 
     @property
+    def biomass(self) -> float:
+        biomass = self.n * self.SD * self.volume  # [kg]
+        return biomass
+    
+    @property
     def price(self) -> float:
         price = self.volume * self.unit_cost
         return price
 
     @property 
     def power(self) -> float:
-        power = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
+        power = self.biomass * 0.572  # Annual Energy [kWh] (previously 50000 [W])
         return power
 
     
