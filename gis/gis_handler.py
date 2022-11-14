@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point
 
 color_map = 'turbo'
-crs = 32630
+crs = 4326
 
 class GISHandler:
     
@@ -18,16 +18,19 @@ class GISHandler:
             if key in self.raster_data:
                 raise Exception('raster {} already loaded!'.format(key))
             else:
-                self.raster_data[key] = Raster(key, src)
+                self.raster_data[key] = rasterio.open(
     
     def display_raster(self, key):
         raster = self.raster_data[key]
         fig, ax = plt.subplots()
         ax = rasterio.plot.show(raster.data, extent=raster.extent, ax=ax, cmap=color_map)
     
-    def query(self, x, y, key):
-        id = ["{}-{}".format(x, y)]
-        geometry = [Point(x, y)]
+    def query_point(self, x, y, rasters=self.raster_data):
+        if x in self.sample_points
+        
+        
+        geometry = Point(x, y)
+        
         point = geopandas.GeoDataFrame(id, geometry=geometry, crs=crs)
         value = [x for x in self.raster_data[key].data.sample([(x, y)])]
         point[key] = value
