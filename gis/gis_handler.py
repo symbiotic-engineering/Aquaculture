@@ -1,50 +1,53 @@
-import geopandas
+import geopandas as gpd
 import rasterio
-import rasterio.plot
-import matplotlib.pyplot as plt
 from shapely.geometry import Point
 
-color_map = 'turbo'
-crs = 4326
+# precision of input coordinates, 5 decimals is about 1.1m of a commercial 'correcting' GPS unit
+# this post is helpful: https://gis.stackexchange.com/questions/8650/measuring-accuracy-of-latitude-and-longitude
+precision = 5
 
 class GISHandler:
-    
-    def __init__(self):
-        self.raster_data = {}
-        self.sample_points = geopandas.GeoDataFrame()
-    
-    def load_raster_files(self, files):
+    """A class to handle GIS raster data and optimizer points."""
+        
+    def __init__(self, files):
+        self.rasters = {}
+        self.points = gpd.GeoDataFrame(columns=['x', 'y', 'result', 'geometry'], geometry='geometry')
+        
         for key, src in files.items():
-            if key in self.raster_data:
-                raise Exception('raster {} already loaded!'.format(key))
+            if key in self.rasters:
+                print('raster {} already loaded!'.format(key))
             else:
-                self.raster_data[key] = rasterio.open(
+                self.rasters[key] = rasterio.open(src)
     
-    def display_raster(self, key):
-        raster = self.raster_data[key]
-        fig, ax = plt.subplots()
-        ax = rasterio.plot.show(raster.data, extent=raster.extent, ax=ax, cmap=color_map)
+    def query(self, x, y):
+        x, y = self.clean(x, y)
+                                    
+        if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
+            print('point exists, returning original data')
+            return self.points.loc[(self.points.x==x) & (self.points.y==y)]
+        
+        conditions = {'x': x, 'y': y, 'geometry': Point(x, y)}
+        
+        for key, raster in self.rasters.items():
+            index = raster.index(x, y)
+            try:
+                 conditions[key] = raster.read(1)[index] # yes, by default this only reads the first band, but this is probably okay
+            except IndexError as error:
+                print('failed to read {} raster: {}'.format(key, error))    
+        
+        self.points = self.points.append(conditions, ignore_index=True)
+        return self.points.iloc[-1:]
     
-    def query_point(self, x, y, rasters=self.raster_data):
-        if x in self.sample_points
+    def record(self, x, y, value):
+        x, y = self.clean(x, y)
         
+        if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
+            self.points.loc[(self.points.x==x) & (self.points.y==y), 'result'] = value
+            return self.points.loc[(self.points.x==x) & (self.points.y==y)]
         
-        geometry = Point(x, y)
+        conditions = {'x': x, 'y': y, 'geometry': Point(x, y), 'result': value}
+        self.points = self.points.append(conditions, ignore_index=True)
+        return self.points.iloc[-1:]       
         
-        point = geopandas.GeoDataFrame(id, geometry=geometry, crs=crs)
-        value = [x for x in self.raster_data[key].data.sample([(x, y)])]
-        point[key] = value
-        self.sample_points = self.sample_points.append(point)
-        return value[0]
-    
-    def record(x, y, value):
-        return 0
-        
-class Raster:
-    
-    def __init__(self, name, src):
-        self.name = name
-        self.src = src
-        
-        self.data = rasterio.open(self.src)
-        self.extent = [self.data.bounds[0], self.data.bounds[2], self.data.bounds[1], self.data.bounds[3]]
+    def clean(self, x, y):
+        return round(x, precision), round(y, precision)
