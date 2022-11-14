@@ -2,14 +2,13 @@ import geopandas as gpd
 import rasterio
 from shapely.geometry import Point
 
-# precision of input coordinates, 5 decimals is about 1.1m of a commercial 'correcting' GPS unit
-# this post is helpful: https://gis.stackexchange.com/questions/8650/measuring-accuracy-of-latitude-and-longitude
-precision = 5
+precision = 5 # precision of input coordinates, 5dec~=1.1m
 
 class GISHandler:
     """A class to handle GIS raster data and optimizer points."""
         
     def __init__(self, files):
+        """Initializes handler by creating a GeoDataFrame to store point measurement data and a dictionary of loaded raster files."""
         self.rasters = {}
         self.points = gpd.GeoDataFrame(columns=['x', 'y', 'result', 'geometry'], geometry='geometry')
         
@@ -20,7 +19,8 @@ class GISHandler:
                 self.rasters[key] = rasterio.open(src)
     
     def query(self, x, y):
-        x, y = self.clean(x, y)
+        """Gets condition data for a specified geography location (lon/lat), stores it in the GeoDataFrame, and returns the row."""
+        x, y = self.coordinate(x, y)
                                     
         if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
             print('point exists, returning original data')
@@ -39,7 +39,8 @@ class GISHandler:
         return self.points.iloc[-1:]
     
     def record(self, x, y, value):
-        x, y = self.clean(x, y)
+        """Records a computed value from the optimizer to a geographic point, returns row recorded to."""
+        x, y = self.coordinate(x, y)
         
         if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
             self.points.loc[(self.points.x==x) & (self.points.y==y), 'result'] = value
@@ -49,5 +50,6 @@ class GISHandler:
         self.points = self.points.append(conditions, ignore_index=True)
         return self.points.iloc[-1:]       
         
-    def clean(self, x, y):
+    def coordinate(self, x, y):
+        """Rounds coordinates to given precision to prevent uneccessary duplication, in the future may handle projections."""
         return round(x, precision), round(y, precision)
