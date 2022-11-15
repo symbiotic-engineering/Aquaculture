@@ -1,72 +1,103 @@
 import numpy as np
 from objects import *
 from typing import Tuple
-    
+
+from gis.gis_handler import GISHandler
 
 def obj(x_in, x_name, p_in: dict):
-    cost_per_yield, price, fish_yield = obj_terms(x_in, x_name, p_in)
-    J = np.array(cost_per_yield)
-    return J
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    return aqua_obj.cost_per_yield
 
-def obj_terms(x_in, x_name, p_in: dict):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    
-    price = econ(wec, pen)
-   
-    # outputs
-    cost_per_yield = price/fish_yield 
-    #print(x_in, price, fish_yield, cost_per_yield)
-    
-    return cost_per_yield, price, fish_yield
-
-def ineq_constraint(x_in, x_name, p):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    carrying_capacity = carrying_capacity_func(pen, fish)
-    
-    P_gen_cons = wec.annual_energy - pen.power
-    #print('P_gen_cons=', wec.annual_energy, pen.power, P_gen_cons)
-    #P_gen_cons = wec.P_gen - pen.power
-    
-    fish_yield_cons = (carrying_capacity - fish_yield)   # Multiply 0.001 to get a similar order with P_gen_cons
-    #fish_yield_cons = (carrying_capacity - fish_yield / pen.n) * 0.001   #for each pen
-    
-    env_Umin_cons = pen.U - fish.U_min
-    env_Umax_cons = fish.U_max - pen.U
-    env_tempmin_cons = pen.temp - fish.temp_min
-    env_tempmax_cons = fish.temp_max - pen.temp
-    env_salinitymin_cons = pen.salinity - fish.salinity_min
-    env_salinitymax_cons = fish.salinity_max - pen.salinity
-    env_O2_min_cons = pen.O2_in - fish.O2_min
-    
-    #print('cons:', P_gen_cons, fish_yield_cons)
-
-    # outputs
-    g = np.array([P_gen_cons, fish_yield_cons, env_Umin_cons, env_Umax_cons,
-                  env_tempmin_cons, env_tempmax_cons, 
-                  env_salinitymin_cons, env_salinitymax_cons, env_O2_min_cons])
+        
+def ineq_constraint(x_in, x_name, p_in: dict):
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    g = np.array([aqua_obj.P_gen_cons, aqua_obj.fish_yield_cons, 
+                  aqua_obj.env_Umin_cons, aqua_obj.env_Umax_cons,
+                  aqua_obj.env_tempmin_cons, aqua_obj.env_tempmax_cons, 
+                  aqua_obj.env_salinitymin_cons, aqua_obj.env_salinitymax_cons, 
+                  aqua_obj.env_O2_min_cons])
 
     return g
 
 
-def eq_constraint(x_in, x_name, p):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
-    
+def eq_constraint(x_in, x_name, p_in: dict):
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
     h = np.array([0])
-        
+
     return h
+    
+class Aqua_Obj(object):
+    def __init__(self, x0, x_name, p):
+        self.x0 = x0
+        self.x_name = x_name
+        self.p = p
+        
+        self.wec, self.wave_in, self.pen, self.fish = input_merge(self.x0, self.x_name, self.p)        
+        
+        self.wave_climate()
+        self.fish_yield_func()
+        self.power()
+        self.carrying_capacity = self.pen.carrying_capacity(self.fish)
+        self.econ()
+        self.cost_per_yield = self.price/self.fish_yield 
+        
+        
+        self.P_gen_cons = self.wec.annual_energy - self.pen.power
+        #print('P_gen_cons=', wec.annual_energy, pen.power, P_gen_cons)
+        #P_gen_cons = wec.P_gen - pen.power
+
+        # Multiply 0.001 to get a similar order with P_gen_cons
+        self.fish_yield_cons = (self.carrying_capacity - self.fish_yield)   
+        #fish_yield_cons = (carrying_capacity - fish_yield / pen.n) * 0.001   #for each pen
+
+        self.env_Umin_cons = self.pen.U - self.fish.U_min
+        self.env_Umax_cons = self.fish.U_max - self.pen.U
+        self.env_tempmin_cons = self.pen.temp - self.fish.temp_min
+        self.env_tempmax_cons = self.fish.temp_max - self.pen.temp
+        self.env_salinitymin_cons = self.pen.salinity - self.fish.salinity_min
+        self.env_salinitymax_cons = self.fish.salinity_max - self.pen.salinity
+        self.env_O2_min_cons = self.pen.O2_in - self.fish.O2_min
+    
+    def power(self):
+        self.wec.P_rated = self.wave_in.power * self.wec.capture_width 
+        self.wec.P_gen = self.wec.P_rated * self.wec.capture_width_ratio
+        return
+    
+    def econ(self):
+        self.price = self.wec.price + self.pen.price + self.fish_feed_price
+        return
+    
+    def wave_climate(self):
+        Hs = self.wec.wave_damping * self.wave_in.Hs
+        T = self.wave_in.T
+        self.wave_out = Wave(Hs,T)
+        return
+    
+    def fish_yield_func(self):
+        survival_rate = (1-self.fish.loss_rate) 
+        self.fish_yield = self.pen.biomass * survival_rate  # [kg]
+        #print("fish_yield", pen.fish_yield)
+        return 
+    
+    @property
+    def fish_feed_price(self):    
+        return self.pen.biomass * self.fish.FCR * self.fish.feed_unit_cost
+
+    def plot_variable(self):
+        self.fish.plot_variable
+        return
+
+    def carrying_capacity_print(self):
+        return self.pen.TPF_O2, self.carrying_capacity
+    
+    @property
+    def P_rated(self):
+        return self.wec.P_rated
+    
+    @property
+    def price_breakdown(self):
+        return self.wec.price, self.pen.price, self.fish_feed_price
+
 
 def input_merge(x_in, x_name, p):
     # merge input dicts
@@ -82,8 +113,17 @@ def input_merge(x_in, x_name, p):
     for i in range(len(x_list)):
         x[x_list[i]] = x_in[i]*scale[i]
  
+    if 'pos_env' in x_name:
+        gis_data = import_gis_data(x_in[0], x_in[1])
+        p['U'] = float(gis_data["current"])
+        p['O2_in'] = float(gis_data["oxygen"])
+        p['salinity'] = float(gis_data["salinity"])
+        p['temp'] = float(gis_data["temperature"])
+
     ins = {**x, **p}
 
+    #print(x)
+    #print(p)
     # create objects
     wave_in = Wave(ins['wave_height'], ins['wave_period'])
     
@@ -98,91 +138,9 @@ def input_merge(x_in, x_name, p):
                 ins['O_f'], ins['O_p'], ins['O_c'], ins['C_f'], ins['C_p'], ins['C_c'],
                 ins['P_f'], ins['P_p'], ins['tau'], ins['loss_rate'], ins['harvest_weight'], 
                 ins['O2_min'], ins['U_min'], ins['U_max'], ins['temp_min'], ins['temp_max'], 
-                ins['salinity_min'], ins['salinity_max'])
-                
+                ins['salinity_min'], ins['salinity_max'], ins['FCR'], ins['feed_unit_cost'])
 
-    
     return wec, wave_in, pen, fish
-
-def plot_variable(x_in, x_name, p):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    carrying_capacity = carrying_capacity_func(pen, fish)
-    
-    P_gen_cons = wec.annual_energy - pen.power
-    fish_yield_cons = carrying_capacity - fish_yield
-    fish.plot_variable
-    return
-
-def power(wec: WEC, wave: Wave) -> float:
-    assert(isinstance(wec,WEC))
-    assert(isinstance(wave,Wave))
-    
-    P_gen = wave.power * wec.capture_width * wec.capture_width_ratio
-    
-    return P_gen
-
-
-def P_rated(x_in, x_name, p_in: dict):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    
-    return wec.P_gen/wec.capture_width_ratio
-    
-
-def carrying_capacity_print(x_in, x_name, p_in: dict):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    carrying_capacity = carrying_capacity_func(pen, fish)
-    
-    return pen.TPF_O2, carrying_capacity
-
-def econ(wec: WEC, pen: Pen) -> float:
-    assert(isinstance(wec,WEC))
-    assert(isinstance(pen,Pen))
-
-    price = wec.price + pen.price
-    return price
-
-def wave_climate(wec: WEC, wave: Wave) -> Wave:
-    assert(isinstance(wec,WEC))
-    assert(isinstance(wave,Wave))
-
-    Hs = wec.wave_damping * wave.Hs
-    T = wave.T
-    wave_out = Wave(Hs,T)
-    return wave_out
-
-def fish_yield_func(wave: Wave, pen: Pen, fish: Fish) -> float:
-    assert(isinstance(wave,Wave))
-    assert(isinstance(pen,Pen))
-
-    survival_rate = (1-fish.loss_rate)
-    pen.fish_yield = pen.n * pen.SD * survival_rate * pen.volume #* pen.harvest_weight  # [kg]
-    #print("fish_yield", pen.fish_yield)
-    return pen.fish_yield
-
-def carrying_capacity_func(pen: Pen, fish: Fish) -> float:
-    assert(isinstance(pen,Pen))
-    assert(isinstance(fish,Fish))
-
-    return pen.carrying_capacity(fish)
-
 
 def variable_lookup(var_category_names):
     # input is a cell array containing some subset of the following categories:
@@ -207,6 +165,10 @@ def variable_lookup(var_category_names):
         var_list.append('num_pens')
         var_list.append('pen_unit_cost')
         var_list.append('permeability')
+        
+    if any('pos_env' in i for i in var_category_names):
+        var_list.append('pos_x')
+        var_list.append('pos_y')
         
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
@@ -246,6 +208,9 @@ def variable_lookup(var_category_names):
         var_list.append('temp_max')
         var_list.append('salinity_min')
         var_list.append('salinity_max')
+        var_list.append('FCR')             #Feed Conversion Ratio [kgFeed/kgFish]
+        var_list.append('feed_unit_cost')  #[$/kgFeed]
+        
 
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
@@ -275,6 +240,10 @@ def default_values(var_category_names):
    
     if any('p_pen' in i for i in var_category_names):
         vals['num_pens'] = (18, '[-]')          
+        
+    if any('pos_env' in i for i in var_category_names):
+        vals['pos_x'] = (-70, 'm')
+        vals['pos_y'] = (41, 'm')
         
     if any('x_env' in i for i in var_category_names):
         vals['temp'] = (16, 'C')               
@@ -316,6 +285,9 @@ def default_values(var_category_names):
         vals['temp_max'] = (28,'[C]')
         vals['salinity_min'] = (30,'[PSU]')
         vals['salinity_max'] = (35,'[PSU]')
+        vals['FCR'] = (1.15,'[kgFeed/kgFish]')
+        vals['feed_unit_cost'] = (1.48,'[$/kgFeed]')
+        
         
     
     '''
@@ -355,7 +327,11 @@ def bnds_values(var_category_names):
         bnds['spacing'] = (100, 300)         #[m]
         bnds['stock_density'] = (15, 30)     #[kg/m^3]
         bnds['pen_depth'] = (1, 30)         #[m] 
-    
+
+    if any('pos_env' in i for i in var_category_names):
+        bnds['pos_x'] = (-100, 100)         #[m]
+        bnds['pos_y'] = (39, 100)         #[m]
+        
     if any('x_env' in i for i in var_category_names):
         bnds['temp'] = (7, 22)              #[C]
         bnds['salinity'] = (26, 36)         #[PSU]
@@ -365,3 +341,12 @@ def bnds_values(var_category_names):
         bnds['wave_period'] = (1, 12)       #[s]
     
     return bnds
+
+def import_gis_data(pos_x, pos_y):
+    # Import raster file
+    raster_files = {'current': 'gis/data/surface-current-ms.tif',
+                'oxygen': 'gis/data/surface-oxygen-mgpl.tif',
+                'salinity': 'gis/data/surface-salinity-psu.tif',
+                'temperature': 'gis/data/surface-temperature-c.tif'}
+    handler = GISHandler(raster_files)
+    return handler.query(pos_x, pos_y)
