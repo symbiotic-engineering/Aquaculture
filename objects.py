@@ -252,7 +252,7 @@ class Pen:
 
     @property
     def price(self) -> float:
-        price = self.volume * self.unit_cost
+        price = self.n * self.volume * self.unit_cost
         return price
 
     @property 
