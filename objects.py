@@ -202,21 +202,37 @@ class Fish:
         ax2.set(xlabel='time [day]', ylabel='DO2 [g/day]');
         ax2.legend()
         plt.show()
-               
+        
         W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)
-        W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000)
-        W_i_2kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 2000)
-        W_i_3kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 3000)
-        W_i_4kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 4000)
+        W_i_1kg = 0
+        W_i_2kg = 0
+        W_i_3kg = 0
+        W_i_4kg = 0
+        ref_DO2 = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
+        
+        try:
+            W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000)
+            ref_DO2[W_i_1kg] = 445
+        except:
+            pass    
+        try:
+            W_i_2kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 2000)
+            ref_DO2[W_i_2kg] = 956
+        except:
+            pass
+        try:
+            W_i_3kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 3000)
+            ref_DO2[W_i_3kg] = 1496
+        except:
+            pass
+        try:
+            W_i_4kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 4000)
+            ref_DO2[W_i_4kg] = 2049
+        except:
+            pass
         
         ax3 = plt.subplot(3,1,3)
         ax3.plot(self.W_i/1000,  np.cumsum(self.DO2_i), 'b' , label='Total DO2')
-
-        ref_DO2 = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
-        ref_DO2[W_i_1kg] = 445
-        ref_DO2[W_i_2kg] = 956
-        ref_DO2[W_i_3kg] = 1496
-        ref_DO2[W_i_4kg] = 2049
         ax3.plot(self.W_i/1000,  ref_DO2, 'r-o', label='Ref Total DO2')
         ax3.set(xlabel='Fish weight [kg]', ylabel='DO2 [g]');
         ax3.legend()
@@ -261,7 +277,7 @@ class Pen:
     
     @property
     def price(self) -> float:
-        price = self.volume * self.unit_cost
+        price = self.n * self.volume * self.unit_cost
         return price
 
     @property 
