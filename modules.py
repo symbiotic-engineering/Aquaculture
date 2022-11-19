@@ -285,7 +285,7 @@ def default_values(var_category_names):
         vals['capture_width'] = (4, '[m]')     #12
 
     if any('x_type_wec' in i for i in var_category_names):
-        vals['wec_type'] = ('point absorber', '[-]')
+        vals['wec_type'] = ('point_absorber_RM3', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
         vals['pen_diameter'] = (15, '[m]')    #20 
@@ -314,7 +314,7 @@ def default_values(var_category_names):
         vals['wave_period'] = (wave_period_i, '[s]')      #(8.33, '[s]')     
     
     if any('p_wec' in i for i in var_category_names):
-        vals['wec_unit_cost'] = (0.45 * 1.19, '[$/kWh]')   # 'point absorber' * inflation rate from 2014 to 2022
+        vals['wec_unit_cost'] = (0.45 * 1.19, '[$/kWh]')   # 'point_absorber_RM3' * inflation rate from 2014 to 2022
         vals['capture_width_ratio_dict'] = (dict(zip(wec_types[0], capture_width_ratios[0])), '[-]')
         vals['wave_damping_dict'] = (dict(zip(wec_types[0], wave_dampings[0])), '[-]')
         vals['eta'] = (0.8,'[-]') 

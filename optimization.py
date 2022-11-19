@@ -99,7 +99,6 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
 
     options={"maxiter":max_iter}
     
-    
     res = minimize(obj_fun, op_obj.x0, 
                    args=arguments, 
                    #method='COBYLA',

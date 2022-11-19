@@ -381,7 +381,6 @@ class ES:
                 sum_val = self.size
         '''
         P_stored_cum = cumsum_with_limits_nb(self.P_stored_hour, self.size)
-        
         return P_stored_cum
     
     @property
