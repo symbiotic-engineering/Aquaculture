@@ -5,33 +5,54 @@ from scipy.integrate import trapz
 from scipy.integrate import quad
 import math
 from matplotlib import pyplot as plt
+from numba import njit
 
+
+@njit
+def cumsum_with_limits_nb(values, uplimit):
+    n = len(values)
+    res = np.empty(n)
+    sum_val = 0
+    for i in range(n):
+        x = values[i] + sum_val
+        if (x <= uplimit):
+            res[i] = x
+            sum_val = x
+        else:
+            res[i] = uplimit
+            sum_val = uplimit
+    return res
     
 class WEC:
     def __init__(self, capture_width: Dict[str,float], 
                 capture_width_ratio_dict: Dict[str,float], 
                 wave_damping_dict: Dict[str,float], 
                 wec_type: str,
-                unit_cost: float) -> None:
+                unit_cost: float,
+                Hs: float, T: float,
+                eta: float, capacity_factor: float):
         
         self.capture_width = capture_width
         self.capture_width_ratio_dict = capture_width_ratio_dict
         self.wave_damping_dict = wave_damping_dict
         self.wec_type = wec_type
         self.unit_cost = unit_cost
-        
-        self.P_gen = []
-        self.P_rated = []
-        
+        self.wave_Hs = Hs
+        self.wave_T = T
+        self.rho = 1000
+        self.g = 9.81
+        self.eta = eta
+        self.capacity_factor = capacity_factor
+                
     @property
-    def annual_energy(self) -> float:
+    def AEP(self) -> float:
         beta_wec = 0.95 * 0.98                      #For RM3 (device availability * transmission efficiency)
-        AEP = self.P_gen * 0.001 * 8766 * beta_wec  #Annual Energy Production [kWh]
+        AEP = np.sum(self.P_electrical) * beta_wec          #Annual Energy Production [kWh]
         return AEP
 
     @property
     def price(self) -> float:
-        price = self.annual_energy * self.unit_cost
+        price = self.AEP * self.unit_cost
         return price
 
     @property
@@ -44,17 +65,27 @@ class WEC:
         capture_width_ratio = self.capture_width_ratio_dict[self.wec_type]
         return capture_width_ratio
 
-class Wave:
-    def __init__(self, Hs: float, T: float) -> None:
-        self.Hs = Hs
-        self.T = T
-        self.rho = 1000
-        self.g = 9.81
+    @property
+    def wave_power(self) -> float:
+        #P_wave = 1/32 * 1/pi * self.rho * self.g**2 * self.wave_Hs**2 * self.wave_T * 0.001 #[kW]   # 1/32 for regular waves
+        P_wave = 1/64 * 1/pi * self.rho * self.g**2 * self.wave_Hs**2 * self.wave_T * 0.001 #[kW]     # 1/64 for irregular wave
+        return P_wave
     
     @property
-    def power(self) -> float:
-        P_wave = 1/32 * 1/pi * self.rho * self.g**2 * self.Hs**2 * self.T
-        return P_wave
+    def P_rated(self):
+        P_rated = np.average(self.eta * self.P_mechanical) / self.capacity_factor
+        return P_rated
+
+    @property
+    def P_mechanical(self):
+        P_mechanical = self.wave_power * self.capture_width * self.capture_width_ratio
+        return P_mechanical 
+    
+    @property
+    def P_electrical(self):
+        P_electrical = self.eta * self.P_mechanical
+        P_electrical = np.where(P_electrical> self.P_rated, self.P_rated, P_electrical)
+        return P_electrical
 
 class Fish:
     def __init__(self, F_f, F_p, F_c, A_f, A_p, A_c, 
@@ -281,11 +312,15 @@ class Pen:
         return price
 
     @property 
-    def power(self) -> float:
-        power = self.biomass * 0.572  # Annual Energy [kWh] (previously 50000 [W])
-        return power
-
+    def annual_energy(self) -> float:
+        annual_energy = self.biomass * 0.572  # Annual Energy [kWh] (previously 50000 [W])
+        return annual_energy
     
+    @property 
+    def power_hour(self) -> float:
+        power_hour = (self.annual_energy / 8760) * np.ones(8760)
+        return power_hour
+
     def carrying_capacity(self, fish) -> float:
         length = self.n * self.D   # Based on worst case
         #length = self.n * self.D + self.spacing * (self.n-1) # From reference paper for a row farm
@@ -309,4 +344,53 @@ class Pen:
         
         return carrying_capacity
 
+class ES:
+    def __init__(self, eta, dod, unit_cost, size):
+        self.eta = eta
+        self.dod = dod
+        self.unit_cost = unit_cost
+        self.size = size
+        self.P_diff = []
+    
+    #Hourly Power for Energy Storage
+    @property 
+    def P_stored_hour(self) -> float:
+        P_stored_hour = np.zeros(len(self.P_diff))
+        for i in range(len(self.P_diff)):
+            if self.P_diff[i]>0:
+                P_stored_hour[i] = self.P_diff[i] * self.eta / self.dod
+            else:
+                P_stored_hour[i] = self.P_diff[i] / self.eta / self.dod
+        P_stored_hour[0] += self.size # assuming the battery is fully charged at the start time
+        return P_stored_hour
+    
+    #Cummulative Power at Energy Storage
+    @property
+    def P_stored_cum(self):
+        '''
+        n = len(self.P_stored_hour)
+        P_stored_cum = np.empty(n)
+        sum_val = 0
+        for i in range(n):
+            x = self.P_stored_hour[i] + sum_val
+            if (x <= self.size):
+                P_stored_cum[i] = x
+                sum_val = x
+            else:
+                P_stored_cum[i] = self.size
+                sum_val = self.size
+        '''
+        P_stored_cum = cumsum_with_limits_nb(self.P_stored_hour, self.size)
+        
+        return P_stored_cum
+    
+    @property
+    def size_required(self):
+        size_required = np.max(self.P_stored_cum)
+        return size_required    
+    
+    @property
+    def price(self):
+        price = self.size * self.unit_cost
+        return price
     

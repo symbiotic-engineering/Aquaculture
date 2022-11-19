@@ -1,6 +1,8 @@
 import numpy as np
-from objects import *
+import csv
 from typing import Tuple
+from objects import *
+from load_wave_data import *
 
 from gis.gis_handler import GISHandler
 
@@ -32,16 +34,15 @@ class Aqua_Obj(object):
         self.x_name = x_name
         self.p = p
         
-        self.wec, self.wave_in, self.pen, self.fish = input_merge(self.x0, self.x_name, self.p)        
+        self.wec, self.pen, self.fish, self.es = input_merge(self.x0, self.x_name, self.p)
                 
-        self.wave_climate()
         self.fish_yield_func()
         self.power()
         self.carrying_capacity = self.pen.carrying_capacity(self.fish)
-        self.econ()
         self.cost_per_yield = self.price/self.fish_yield 
                 
-        self.P_gen_cons = self.wec.annual_energy - self.pen.power
+        #self.P_gen_cons = self.wec.annual_energy - self.pen.annual_energy
+        self.P_gen_cons = np.min(self.es.P_stored_cum)
         #print('P_gen_cons=', wec.annual_energy, pen.power, P_gen_cons)
         #P_gen_cons = wec.P_gen - pen.power
 
@@ -56,21 +57,22 @@ class Aqua_Obj(object):
         self.env_salinitymin_cons = self.pen.salinity - self.fish.salinity_min
         self.env_salinitymax_cons = self.fish.salinity_max - self.pen.salinity
         self.env_O2_min_cons = self.pen.O2_in - self.fish.O2_min
+        #self.es_size_cons = self.es.size - self.es.size_required
     
     def power(self):
-        self.wec.P_rated = self.wave_in.power * self.wec.capture_width 
-        self.wec.P_gen = self.wec.P_rated * self.wec.capture_width_ratio
+        self.es.P_diff = self.wec.P_electrical - self.pen.power_hour
         return
     
-    def econ(self):
-        self.price = self.wec.price + self.pen.price + self.fish_feed_price
-        return
+    @property
+    def price(self):
+        price = self.wec.price + self.pen.price + self.fish_feed_price + self.es.price
+        return price
     
-    def wave_climate(self):
-        Hs = self.wec.wave_damping * self.wave_in.Hs
-        T = self.wave_in.T
-        self.wave_out = Wave(Hs,T)
-        return
+    #def wave_climate(self):
+    #    Hs = self.wec.wave_damping * self.wec.wave_Hs
+    #    T = self.wec.wave_T
+    #    self.wave_out = Wave(Hs,T)
+    #    return
     
     def fish_yield_func(self):
         survival_rate = (1-self.fish.loss_rate) 
@@ -90,12 +92,51 @@ class Aqua_Obj(object):
         return self.pen.TPF_O2, self.carrying_capacity
     
     @property
-    def P_rated(self):
-        return self.wec.P_rated
-    
-    @property
     def price_breakdown(self):
         return self.wec.price, self.pen.price, self.fish_feed_price
+    
+    def plot_power(self):
+        ax1 = plt.subplot(5,1,1)
+        ax1.plot(self.wec.P_mechanical)
+        ax1.set(xlabel='time [hour]', ylabel='P_mechanical(kW)');
+        ax1.grid()
+        #plt.ylim(-10, 10)
+        plt.show()
+
+        ax1 = plt.subplot(5,1,2)
+        ax1.plot(self.wec.P_electrical)
+        ax1.set(xlabel='time [hour]', ylabel='P_electrical(kW)');
+        ax1.grid()
+        #plt.ylim(0, 20)
+        plt.show()
+
+        ax1 = plt.subplot(5,1,3)
+        ax1.plot(self.pen.power_hour)
+        ax1.set(xlabel='time [hour]', ylabel='pen power(kW)');
+        ax1.grid()
+        #plt.ylim(-10, 10)
+        plt.show()
+
+        ax1 = plt.subplot(5,1,4)
+        ax1.plot(self.es.P_diff)
+        ax1.set(xlabel='time [hour]', ylabel='P_diff(kW)');
+        ax1.grid()
+        #plt.ylim(-20, 20)
+        plt.show()
+
+        '''
+        ax2 = plt.subplot(5,1,4)
+        ax2.plot(self.es.P_stored_hour, label='kWh')
+        ax2.set(xlabel='time [hour]', ylabel='P_stored_hour(kWh)');
+        ax2.legend()
+        plt.show()
+        '''
+
+        ax3 = plt.subplot(5,1,5)
+        ax3.plot(self.es.P_stored_cum)
+        ax3.set(xlabel='time [hour]', ylabel='P_stored_cum (kW)');
+        ax3.grid()
+        plt.show()
 
 
 def input_merge(x_in, x_name, p):
@@ -123,11 +164,11 @@ def input_merge(x_in, x_name, p):
 
     #print(x)
     #print(p)
-    # create objects
-    wave_in = Wave(ins['wave_height'], ins['wave_period'])
-    
+    # create objects    
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
-            ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'])
+            ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'],
+            ins['wave_height'], ins['wave_period'],
+            ins['eta'], ins['capacity_factor'])
 
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
               ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['temp'], 
@@ -138,8 +179,11 @@ def input_merge(x_in, x_name, p):
                 ins['P_f'], ins['P_p'], ins['tau'], ins['loss_rate'], ins['harvest_weight'], 
                 ins['O2_min'], ins['U_min'], ins['U_max'], ins['temp_min'], ins['temp_max'], 
                 ins['salinity_min'], ins['salinity_max'], ins['FCR'], ins['feed_unit_cost'])
+    
+    es = ES(ins['es_eta'], ins['es_dod'], ins['es_unit_cost'], ins['es_size'])
 
-    return wec, wave_in, pen, fish
+    #print(ins['es_size'])
+    return wec, pen, fish, es
 
 def variable_lookup(var_category_names):
     # input is a cell array containing some subset of the following categories:
@@ -183,6 +227,8 @@ def variable_lookup(var_category_names):
         var_list.append('wec_unit_cost')
         var_list.append('capture_width_ratio_dict')
         var_list.append('wave_damping_dict')
+        var_list.append('eta')
+        var_list.append('capacity_factor')
     
     if any('p_fish' in i for i in var_category_names):
         var_list.append('F_f')             #Fraction of Fat in the Feed Mix [-]
@@ -211,7 +257,14 @@ def variable_lookup(var_category_names):
         var_list.append('salinity_max')
         var_list.append('FCR')             #Feed Conversion Ratio [kgFeed/kgFish]
         var_list.append('feed_unit_cost')  #[$/kgFeed]
-        
+    
+    if any('x_es' in i for i in var_category_names):
+        var_list.append('es_size')
+
+    if any('p_es' in i for i in var_category_names):
+        var_list.append('es_eta')
+        var_list.append('es_dod')
+        var_list.append('es_unit_cost')
 
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
@@ -222,9 +275,11 @@ def variable_lookup(var_category_names):
 
 def default_values(var_category_names):
     vals = {}
-    wec_types = (['attenuator','terminator','point absorber'], '[-]')
-    capture_width_ratios = ([0.16, 0.34, 0.35], '[-]') 
-    wave_dampings = ([0, 0.13, 0.17], '[-]')            
+    wec_types = (['attenuator','terminator','point_absorber_RM3'], '[-]')
+    capture_width_ratios = ([0.16, 0.34, 0.16], '[-]') 
+    wave_dampings = ([0, 0.13, 0.17], '[-]')      
+    wave_file_name = "wave_data/Wave_Data2.csv"
+    wave_period_i, wave_height_i = load_wave_data(wave_file_name)
 
     if any('x_wec' in i for i in var_category_names):
         vals['capture_width'] = (4, '[m]')     #12
@@ -255,13 +310,15 @@ def default_values(var_category_names):
         vals['salinity'] = (33, '[PSU]')
         vals['U'] = (.2, '[m/s]')
         vals['O2_in'] = (8,'[mg/l]')                      
-        vals['wave_height'] = (1.4, '[m]')     
-        vals['wave_period'] = (8.33, '[s]')     
+        vals['wave_height'] = (wave_height_i, '[m]')    #(1.4, '[m]')     
+        vals['wave_period'] = (wave_period_i, '[s]')      #(8.33, '[s]')     
     
     if any('p_wec' in i for i in var_category_names):
         vals['wec_unit_cost'] = (0.45 * 1.19, '[$/kWh]')   # 'point absorber' * inflation rate from 2014 to 2022
         vals['capture_width_ratio_dict'] = (dict(zip(wec_types[0], capture_width_ratios[0])), '[-]')
         vals['wave_damping_dict'] = (dict(zip(wec_types[0], wave_dampings[0])), '[-]')
+        vals['eta'] = (0.8,'[-]') 
+        vals['capacity_factor'] = (0.3,'[-]') 
         
     if any('p_fish_salmon' in i for i in var_category_names):
         vals['F_p'] = (0.45, '[-]')
@@ -291,7 +348,14 @@ def default_values(var_category_names):
         vals['FCR'] = (1.15,'[kgFeed/kgFish]')
         vals['feed_unit_cost'] = (1.48,'[$/kgFeed]')
         
-        
+    if any('x_es' in i for i in var_category_names):
+        vals['es_size'] = (50,'[kWh]')
+    
+    if any('p_es' in i for i in var_category_names):
+        vals['es_eta'] = (0.92,'[-]')
+        vals['es_dod'] = (0.7,'[-]')
+        vals['es_unit_cost'] = (271,'[$/kWh]')
+
     
     '''
     if any('p_fish_black_sea_bass' in i for i in var_category_names):
@@ -322,7 +386,7 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 20)     #[m] 40
+        bnds['capture_width'] = (1, 40)     #[m] 40
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 40)      #[m]
@@ -332,7 +396,7 @@ def bnds_values(var_category_names):
         bnds['pen_depth'] = (1, 30)         #[m] 
 
     if any('x_disc_pen' in i for i in var_category_names):
-        bnds['num_pens'] = (1, 40)         #[-] 
+        bnds['num_pens'] = (1, 20)         #[-] 
         
     if any('pos_env' in i for i in var_category_names):
         bnds['pos_x'] = (-100, 100)         #[m]
@@ -345,6 +409,9 @@ def bnds_values(var_category_names):
         bnds['U'] = (0.01, 0.55)            #[m/s]
         bnds['wave_height'] = (0.2, 3)      #[m]
         bnds['wave_period'] = (1, 12)       #[s]
+    
+    if any('x_es' in i for i in var_category_names):
+        bnds['es_size'] = (5, 500)          #[kWh]
     
     return bnds
 
