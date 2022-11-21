@@ -19,6 +19,7 @@ class WEC:
         self.wave_damping_dict = wave_damping_dict
         self.wec_type = wec_type
         self.unit_cost = unit_cost
+        self.capacity_factor = 0.3
         
         self.P_gen = []
         
@@ -52,7 +53,7 @@ class Wave:
     
     @property
     def power(self) -> float:
-        P_wave = 1/32 * 1/pi * self.rho * self.g**2 * self.Hs**2 * self.T
+        P_wave = 1/32 * 1/pi * self.rho * self.g**2 * self.Hs**2 * self.T  #for regular wave
         return P_wave
 
 class Fish:
