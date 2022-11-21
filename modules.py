@@ -137,7 +137,7 @@ def P_rated(x_in, x_name, p_in: dict):
     fish_yield = fish_yield_func(wave_out,pen, fish)
     wec.P_gen = power(wec, wave_in)
     
-    return wec.P_gen/wec.capture_width_ratio
+    return wec.P_gen/wec.capacity_factor
     
 
 def carrying_capacity_print(x_in, x_name, p_in: dict):
