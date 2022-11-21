@@ -2,8 +2,7 @@ import numpy as np
 import csv
 from typing import Tuple
 from objects import *
-from load_wave_data import *
-
+import pandas as pd
 from gis.gis_handler import GISHandler
 
 def obj(x_in, x_name, p_in: dict):
@@ -160,6 +159,18 @@ def input_merge(x_in, x_name, p):
         p['salinity'] = float(gis_data["salinity"])
         p['temp'] = float(gis_data["temperature"])
 
+    if ('wave_data' in p) and (p['wave_data']!=""):
+        wave_file_name = p['wave_data']
+        wave_period_i, wave_height_i = load_wave_data(wave_file_name)
+        p['wave_height'] = wave_height_i
+        p['wave_period'] = wave_period_i
+    elif 'wave_height' in p:
+        p['wave_height'] = p['wave_height'] * np.ones(8760)
+        p['wave_period'] = p['wave_period'] * np.ones(8760)
+    elif 'wave_height' in x:
+        x['wave_height'] = x['wave_height'] * np.ones(8760)
+        x['wave_period'] = x['wave_period'] * np.ones(8760)
+
     ins = {**x, **p}
 
     #print(x)
@@ -214,7 +225,7 @@ def variable_lookup(var_category_names):
     if any('pos_env' in i for i in var_category_names):
         var_list.append('pos_x')
         var_list.append('pos_y')
-        
+
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
         var_list.append('O2_in')
@@ -222,7 +233,10 @@ def variable_lookup(var_category_names):
         var_list.append('U')
         var_list.append('wave_height')
         var_list.append('wave_period')
-        
+    
+    if any('wave_data' in i for i in var_category_names):
+        var_list.append('wave_data')
+
     if any('p_wec' in i for i in var_category_names):
         var_list.append('wec_unit_cost')
         var_list.append('capture_width_ratio_dict')
@@ -278,8 +292,6 @@ def default_values(var_category_names):
     wec_types = (['attenuator','terminator','point_absorber_RM3'], '[-]')
     capture_width_ratios = ([0.16, 0.34, 0.16], '[-]') 
     wave_dampings = ([0, 0.13, 0.17], '[-]')      
-    wave_file_name = "wave_data/Wave_Data2.csv"
-    wave_period_i, wave_height_i = load_wave_data(wave_file_name)
 
     if any('x_wec' in i for i in var_category_names):
         vals['capture_width'] = (4, '[m]')     #12
@@ -302,16 +314,19 @@ def default_values(var_category_names):
         vals['permeability'] = (0.8, '[-]')
         
     if any('pos_env' in i for i in var_category_names):
-        vals['pos_x'] = (-70, 'm')
-        vals['pos_y'] = (41, 'm')
-        
+        vals['pos_x'] = (-70, '[m]')
+        vals['pos_y'] = (41, '[m]')
+    
     if any('x_env' in i for i in var_category_names):
         vals['temp'] = (16, 'C')               
         vals['salinity'] = (33, '[PSU]')
         vals['U'] = (.2, '[m/s]')
-        vals['O2_in'] = (8,'[mg/l]')                      
-        vals['wave_height'] = (wave_height_i, '[m]')    #(1.4, '[m]')     
-        vals['wave_period'] = (wave_period_i, '[s]')      #(8.33, '[s]')     
+        vals['O2_in'] = (8,'[mg/l]')
+        vals['wave_height'] = (1.4, '[m]')
+        vals['wave_period'] = (8.33, '[s]')
+    
+    if any('wave_data' in i for i in var_category_names):
+        vals['wave_data'] = ("",'[-]')
     
     if any('p_wec' in i for i in var_category_names):
         vals['wec_unit_cost'] = (0.45 * 1.19, '[$/kWh]')   # 'point_absorber_RM3' * inflation rate from 2014 to 2022
@@ -423,3 +438,9 @@ def import_gis_data(pos_x, pos_y):
                 'temperature': 'gis/data/surface-temperature-c.tif'}
     handler = GISHandler(raster_files)
     return handler.query(pos_x, pos_y)
+
+def load_wave_data(file_name):
+    df = pd.read_csv(file_name)
+    wave_period = df['Peak Period']
+    wave_height = df['Significant Wave Height']
+    return np.array(wave_period.values), np.array(wave_height.values)
