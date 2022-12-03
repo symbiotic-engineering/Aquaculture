@@ -7,6 +7,8 @@ import math
 from matplotlib import pyplot as plt
 from numba import njit
 
+def deg2rad(deg):
+    return deg * (math.pi/180)
 
 @njit
 def cumsum_with_limits_nb(values, uplimit):
@@ -276,10 +278,42 @@ class Fish:
 
         print('fish weight after 365 days',self.W_i[-1])        
         
+class Env:
+    def __init__(self, pos_x, pos_y, temp, O2_in, U, salinity):
+        self.pos_x = pos_x
+        self.pos_y = pos_y
+        self.temp = temp
+        self.O2_in = O2_in
+        self.U = U
+        self.salinity = salinity
+
+        # NewYork port
+        self.lat1 = 41.666
+        self.lon1 = -69.946
+        # Deployment location 
+        self.lat2 = 41.098
+        self.lon2 = -66.619
+    
+    '''
+    @property
+    def distance(self):
+        distance = np.sqrt((self.pos_x ** 2) + (self.pos_y ** 2))
+        return distance
+    '''
+
+    @property
+    def distance(self):
+        R = 6371 # Radius of the earth in km
+        dLat = deg2rad(self.lat2 - self.lat1)  # deg2rad below
+        dLon = deg2rad(self.lon2 - self.lon1)
+        a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(deg2rad(self.lat1)) * math.cos(deg2rad(self.lat2)) * math.sin(dLon/2) * math.sin(dLon/2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        distance = R * c # Distance in km
+        return distance
+
 class Pen:
     def __init__(self, D: float, H: float, Depth: float, SD: float, n: float, spacing: float, 
-                 unit_cost: float, temp: float, O2_in: float, U: float, salinity: float,
-                 permeability: float) -> None:
+                 unit_cost: float, permeability: float) -> None:
         self.D = D 
         self.H = H
         self.Depth = Depth
@@ -288,10 +322,6 @@ class Pen:
         self.spacing = spacing
 
         self.unit_cost = unit_cost
-        self.temp = temp
-        self.O2_in = O2_in
-        self.U = U
-        self.salinity = salinity
         self.permeability = permeability
         
         self.TPF_O2 = 0
@@ -321,18 +351,18 @@ class Pen:
         power_hour = (self.annual_energy / 8760) * np.ones(8760)
         return power_hour
 
-    def carrying_capacity(self, fish) -> float:
+    def carrying_capacity(self, fish, env):
         length = self.n * self.D   # Based on worst case
         #length = self.n * self.D + self.spacing * (self.n-1) # From reference paper for a row farm
         #length = self.D # for each pen
 
         #print('length',length)
                     
-        OT = (self.O2_in - fish.O2_min) * length * self.Depth * self.permeability * fish.U_min # [g_O2 / s]
+        OT = (env.O2_in - fish.O2_min) * length * self.Depth * self.permeability * fish.U_min # [g_O2 / s]
                
         #print('OT=' , OT)
         
-        self.TPF_O2 = (OT * 3600 * 24 * 365) / fish.DO2(self.temp)  # [kg-fish / year]
+        self.TPF_O2 = (OT * 3600 * 24 * 365) / fish.DO2(env.temp)  # [kg-fish / year]
         #print('fish.DO2=',fish.DO2(self.temp))
         #print('TPF_O2=',self.TPF_O2)
         
@@ -393,3 +423,24 @@ class ES:
         price = self.size * self.unit_cost
         return price
     
+class Vessel:
+    def __init__(self, fuel_consump_rate, fuel_cost, captain_salary, crew_salary, crew_num, t_feed, velocity):
+        self.fuel_consump_rate = fuel_consump_rate
+        self.fuel_cost = fuel_cost
+        self.captain_salary = captain_salary
+        self.crew_salary = crew_salary
+        self.crew_num = crew_num
+        self.t_feed = t_feed
+        self.velocity = velocity
+        self.t_travel = []
+    
+    def travel_time(self, distance):
+        self.t_travel = 2 * distance / self.velocity  # back and forth travel between port and deployment location
+        return
+
+    @property 
+    def price(self):
+        fuel_price = self.t_travel * self.fuel_cost * self.fuel_cost
+        laber_salary = (self.t_travel + self.t_feed) * (self.captain_salary + self.crew_num * self.crew_salary)
+        price = 365 * (fuel_price + laber_salary) # annual price
+        return price

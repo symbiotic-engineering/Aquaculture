@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 from modules import Aqua_Obj
 
 def print_bold(str):
@@ -16,12 +18,18 @@ def print_P_rated(title, aqua_obj):
     print(' '*2, "P_rated     ", "{:10.3f}".format(aqua_obj.wec.P_rated), '[kW]')
     print("-"*40)
 
+def print_travel_distance(title, aqua_obj):
+    print_bold(title+" Port to deployment location distance:")
+    print(' '*2, "distance     ", "{:10.3f}".format(aqua_obj.env.distance), '[km]')
+    print("-"*40)
+
 def print_price_breakdown(title, aqua_obj):
     print_bold(title+" price break down:")
-    print(' '*2, "wec price      ", "{:10.3f}".format(aqua_obj.wec.price), '[$]')
-    print(' '*2, "pen price      ", "{:10.3f}".format(aqua_obj.pen.price), '[$]')
-    print(' '*2, "fish feed price", "{:10.3f}".format(aqua_obj.fish_feed_price), '[$]')
-    print(' '*2, "energy st price", "{:10.3f}".format(aqua_obj.es.price), '[$]')
+    print(' '*2, "wec price           ", "{:10.3f}".format(aqua_obj.wec.price), '[$]')
+    print(' '*2, "pen price           ", "{:10.3f}".format(aqua_obj.pen.price), '[$]')
+    print(' '*2, "fish feed price     ", "{:10.3f}".format(aqua_obj.fish_feed_price), '[$]')
+    print(' '*2, "energy st price     ", "{:10.3f}".format(aqua_obj.es.price), '[$]')
+    #print(' '*2, "vessel travel price ", "{:10.3f}".format(aqua_obj.vessel.price), '[$]')
     print("-"*40)
 
 def print_carrying_capacity(title, aqua_obj):
@@ -47,6 +55,7 @@ def init_result(x0_init, x_name, p_init):
     aqua_init_obj = Aqua_Obj(x0_init, x_name, p_init) 
     print_objective("Initial",aqua_init_obj)
     print_P_rated("Initial",aqua_init_obj)
+    print_travel_distance("Initial",aqua_init_obj)
     print_price_breakdown("Initial",aqua_init_obj)
     print_ineq_cons("Initial",aqua_init_obj)
     print_carrying_capacity("Initial",aqua_init_obj)
@@ -66,6 +75,7 @@ def optimize_result(x_name, x_list, x_unit, res_opt, p):
     
     print_objective("optimal",aqua_opt_obj)
     print_P_rated("optimal",aqua_opt_obj)
+    print_travel_distance("optimal",aqua_opt_obj)
     print_price_breakdown("optimal",aqua_opt_obj)
     print_ineq_cons("optimal",aqua_opt_obj)
     print_carrying_capacity("optimal",aqua_opt_obj)
