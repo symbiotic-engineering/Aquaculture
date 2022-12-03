@@ -29,7 +29,7 @@ def print_price_breakdown(title, aqua_obj):
     print(' '*2, "pen price           ", "{:10.3f}".format(aqua_obj.pen.price), '[$]')
     print(' '*2, "fish feed price     ", "{:10.3f}".format(aqua_obj.fish_feed_price), '[$]')
     print(' '*2, "energy st price     ", "{:10.3f}".format(aqua_obj.es.price), '[$]')
-    #print(' '*2, "vessel travel price ", "{:10.3f}".format(aqua_obj.vessel.price), '[$]')
+    print(' '*2, "vessel travel price ", "{:10.3f}".format(aqua_obj.vessel.price), '[$]')
     print("-"*40)
 
 def print_carrying_capacity(title, aqua_obj):

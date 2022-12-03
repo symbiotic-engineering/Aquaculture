@@ -12,7 +12,7 @@ from matplotlib.ticker import FormatStrFormatter
 
 max_iter = 2000
 
-def wecpen_opt(all_vars, *x0):
+def wecpen_opt(all_vars, *args):
     wec_types = ['point_absorber_RM3'] #,'attenuator','terminator','point_absorber_RM3']
 
     # design variables and parameters
@@ -24,14 +24,14 @@ def wecpen_opt(all_vars, *x0):
         p_name = ['x_type_wec', 'x_env', 'x_es'] #,'x_env'
 
     x = OpData(x_name)
-    if x0:
+    if 'x0' in args[0]:
         for i in range(len(x.list)):
-            x.nom_dict[x.list[i]] = x0[0][i]
+            x.nom_dict[x.list[i]] = args[0]['x0'][i]
 
     x_disc_name = ['x_disc_pen']
     x_disc = OpData(x_disc_name)
-    #x_disc.bnds[0] = (11, 11)   # to accelerate the computation
-
+    if 'fixed_num_pen' in args[0]:
+        x_disc.bnds[0] = (args[0]['fixed_num_pen'], args[0]['fixed_num_pen'])   # to accelerate the computation
     
     
     param = OpData(p_name + x_disc_name)
@@ -61,6 +61,7 @@ def wecpen_opt(all_vars, *x0):
                     param.nom_dict['es_size'] = 0                    
 
                 res_opt, op_obj, p = optimization.run_optimization(x.name, x.nom0, param.name, param.nom_dict, all_vars, max_iter)
+
                 if init_flag:
                     x_init, p_init = x , p
                     res_best = copy.copy(res_opt)

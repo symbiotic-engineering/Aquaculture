@@ -65,7 +65,7 @@ class Aqua_Obj(object):
     
     @property
     def price(self):
-        price = self.wec.price + self.pen.price + self.fish_feed_price + self.es.price #+ self.vessel.price
+        price = self.wec.price + self.pen.price + self.fish_feed_price + self.es.price + self.vessel.price
         return price
     
     #def wave_climate(self):
@@ -309,7 +309,7 @@ def default_values(var_category_names):
     wave_dampings = ([0, 0.13, 0.17], '[-]')      
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = (4, '[m]')     #83
+        vals['capture_width'] = (72, '[m]')     #4 without cost travel from shore
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point_absorber_RM3', '[-]')
@@ -333,7 +333,7 @@ def default_values(var_category_names):
         vals['pos_y'] = (41, '[m]')
     
     if any('x_env' in i for i in var_category_names):
-        vals['temp'] = (16, 'C')             #15
+        vals['temp'] = (16, 'C')             #16  
         vals['salinity'] = (33, '[PSU]')
         vals['U'] = (.2, '[m/s]')
         vals['O2_in'] = (8,'[mg/l]')
@@ -383,7 +383,7 @@ def default_values(var_category_names):
         vals['feed_unit_cost'] = (1.48,'[$/kgFeed]')
         
     if any('x_es' in i for i in var_category_names):
-        vals['es_size'] = (50,'[kWh]') #3462
+        vals['es_size'] = (3000,'[kWh]') #50 without cost travel from shore
     
     if any('p_es' in i for i in var_category_names):
         vals['es_eta'] = (0.92,'[-]')
@@ -428,7 +428,7 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 40)     #[m] 40
+        bnds['capture_width'] = (1, 100)     #[m] (1,100) without cost travel from shore
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 40)      #[m]
@@ -453,7 +453,7 @@ def bnds_values(var_category_names):
         bnds['wave_period'] = (1, 12)       #[s]
     
     if any('x_es' in i for i in var_category_names):
-        bnds['es_size'] = (5, 500)          #[kWh] 10000
+        bnds['es_size'] = (5, 5000)          #[kWh] (5,500) without cost travel from shore
     
     return bnds
 
