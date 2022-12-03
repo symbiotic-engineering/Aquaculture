@@ -50,6 +50,14 @@ def print_ineq_cons(title,aqua_obj):
     print(' '*2, "env_salinitymax_cons", "{:10.3f}".format(aqua_obj.env_salinitymax_cons), '[PSU]')
     print(' '*2, "env_O2_min_cons     ", "{:10.3f}".format(aqua_obj.env_O2_min_cons), '[mg/l]')
     print("-"*40)
+
+def print_dieselgen(title,aqua_obj):
+    print_bold(title+" diesel generator:")
+    print(' '*2, "P_rated        ", "{:10.3f}".format(aqua_obj.dieselgen.P_rated), '[kWh]')
+    print(' '*2, "diesel Price    ", "{:10.3f}".format(aqua_obj.dieselgen.price), '[$]')
+    print(' '*2, "wec+es Price   ", "{:10.3f}".format(aqua_obj.wec.price + aqua_obj.es.price), '[$]')
+    print(' '*2, "cost per yield ", "{:10.3f}".format(aqua_obj.cost_per_yield_with_dieselgen), '[$/kg]')
+    print("-"*40)
             
 def init_result(x0_init, x_name, p_init):
     aqua_init_obj = Aqua_Obj(x0_init, x_name, p_init) 
@@ -79,3 +87,4 @@ def optimize_result(x_name, x_list, x_unit, res_opt, p):
     print_price_breakdown("optimal",aqua_opt_obj)
     print_ineq_cons("optimal",aqua_opt_obj)
     print_carrying_capacity("optimal",aqua_opt_obj)
+    print_dieselgen("equivalent",aqua_opt_obj)

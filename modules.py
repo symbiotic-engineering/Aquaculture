@@ -33,13 +33,14 @@ class Aqua_Obj(object):
         self.x_name = x_name
         self.p = p
         
-        self.wec, self.env, self.pen, self.fish, self.es, self.vessel = input_merge(self.x0, self.x_name, self.p)
+        self.wec, self.env, self.pen, self.fish, self.es, self.vessel, self.dieselgen = input_merge(self.x0, self.x_name, self.p)
                 
         self.fish_yield_func()
         self.power()
         self.carrying_capacity = self.pen.carrying_capacity(self.fish, self.env)
         self.vessel.travel_time(self.env.distance)
         self.cost_per_yield = self.price/self.fish_yield 
+        self.cost_per_yield_with_dieselgen = self.price_with_dieselgen/self.fish_yield 
                 
         #self.P_gen_cons = self.wec.annual_energy - self.pen.annual_energy
         self.P_gen_cons = np.min(self.es.P_stored_cum)
@@ -60,12 +61,14 @@ class Aqua_Obj(object):
         #self.es_size_cons = self.es.size - self.es.size_required
     
     def power(self):
+        self.dieselgen.power(self.pen.power_hour[0])
         self.es.P_diff = self.wec.P_electrical - self.pen.power_hour
         return
     
     @property
     def price(self):
         price = self.wec.price + self.pen.price + self.fish_feed_price + self.es.price + self.vessel.price
+        self.price_with_dieselgen = self.pen.price + self.fish_feed_price + self.vessel.price + self.dieselgen.price
         return price
     
     #def wave_climate(self):
@@ -196,8 +199,11 @@ def input_merge(x_in, x_name, p):
                     ins['captain_salary'], ins['crew_salary'], ins['crew_num'], 
                     ins['time_feed'], ins['vessel_velocity'])
 
+    dieselgen = dieselGen(ins['diesel_unit_cost'], ins['diesel_fuel_consump_rate'], ins['diesel_fuel_cost'], 
+                    ins['diesel_eta'], ins['diesel_load_level'])
+
     #print(ins)
-    return wec, env, pen, fish, es, vessel
+    return wec, env, pen, fish, es, vessel, dieselgen
 
 def variable_lookup(var_category_names):
     # input is a cell array containing some subset of the following categories:
@@ -294,6 +300,13 @@ def variable_lookup(var_category_names):
         var_list.append('crew_salary')
         var_list.append('crew_num')
         var_list.append('time_feed')
+
+    if any('p_diesel' in i for i in var_category_names):
+        var_list.append('diesel_eta')
+        var_list.append('diesel_fuel_consump_rate')
+        var_list.append('diesel_fuel_cost')
+        var_list.append('diesel_unit_cost')
+        var_list.append('diesel_load_level')
 
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
@@ -398,6 +411,13 @@ def default_values(var_category_names):
         vals['crew_salary'] = (58500/8760*1.32,'[$/h]')
         vals['crew_num'] = (2,'[-]')
         vals['time_feed'] = (2,'[h]')
+
+    if any('p_diesel' in i for i in var_category_names):
+        vals['diesel_eta'] = (.40,'[%]')
+        vals['diesel_fuel_consump_rate'] = (7.6,'[gal/h]')  # for 135 kW
+        vals['diesel_fuel_cost'] = (3.5,'[$/gal]')
+        vals['diesel_unit_cost'] = (0.3*1.14,'[$/kWh]')
+        vals['diesel_load_level'] = (0.75,'[%]') 
     
     '''
     if any('p_fish_black_sea_bass' in i for i in var_category_names):
@@ -459,10 +479,10 @@ def bnds_values(var_category_names):
 
 def import_gis_data(pos_x, pos_y):
     # Import raster file
-    raster_files = {'current': 'gis/data/surface-current-ms.tif',
-                'oxygen': 'gis/data/surface-oxygen-mgpl.tif',
-                'salinity': 'gis/data/surface-salinity-psu.tif',
-                'temperature': 'gis/data/surface-temperature-c.tif'}
+    raster_files = {'current': '../gis/data/surface-current-ms.tif',
+                'oxygen': '../gis/data/surface-oxygen-mgpl.tif',
+                'salinity': '../gis/data/surface-salinity-psu.tif',
+                'temperature': '../gis/data/surface-temperature-c.tif'}
     handler = GISHandler(raster_files)
     return handler.query(pos_x, pos_y)
 

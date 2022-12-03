@@ -444,3 +444,22 @@ class Vessel:
         laber_salary = (self.t_travel + self.t_feed) * (self.captain_salary + self.crew_num * self.crew_salary)
         price = 365 * (fuel_price + laber_salary) # annual price
         return price
+
+
+class dieselGen:
+    def __init__(self, unit_cost, fuel_consump_rate, fuel_cost, eta, load_level):
+        self.unit_cost = unit_cost
+        self.fuel_consump_rate = fuel_consump_rate
+        self.fuel_cost = fuel_cost
+        self.eta = eta
+        self.load_level = load_level
+        self.P_rated = []
+    
+    def power(self, power_out):
+        self.P_rated = power_out / self.eta / self.load_level
+        return
+    
+    @property
+    def price(self):
+        price = (self.unit_cost * self.P_rated + self.fuel_cost * self.fuel_consump_rate) * 8760
+        return price
