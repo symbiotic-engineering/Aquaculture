@@ -10,7 +10,7 @@ class GISHandler:
     def __init__(self, files):
         """Initializes handler by creating a GeoDataFrame to store point measurement data and a dictionary of loaded raster files."""
         self.rasters = {}
-        self.points = gpd.GeoDataFrame(columns=['x', 'y', 'result', 'geometry'], geometry='geometry')
+        self.points = gpd.GeoDataFrame(columns=['x', 'y', 'valid', 'result', 'geometry'], geometry='geometry')
         
         for key, src in files.items():
             if key in self.rasters:
@@ -26,14 +26,16 @@ class GISHandler:
             print('point exists, returning original data')
             return self.points.loc[(self.points.x==x) & (self.points.y==y)]
         
-        conditions = {'x': x, 'y': y, 'geometry': Point(x, y)}
+        conditions = {'x': x, 'y': y, 'valid': True, 'geometry': Point(x, y)}
         
         for key, raster in self.rasters.items():
             index = raster.index(x, y)
             try:
                  conditions[key] = raster.read(1)[index] # yes, by default this only reads the first band, but this is probably okay
             except IndexError as error:
-                print('failed to read {} raster: {}'.format(key, error))    
+                print('failed to read {} raster: {}'.format(key, error))
+            if conditions[key] <= 0: # yes, this assumes that zero is not a valid value. this is true for our current rasters, but isn't neccsarily correct
+                conditions['valid'] = False
         
         self.points = self.points.append(conditions, ignore_index=True)
         return self.points.iloc[-1:]
