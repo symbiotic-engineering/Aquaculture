@@ -20,7 +20,7 @@ class GISHandler:
                 
         self.extent = self.extent()
     
-    def query(self, x, y):
+    def query(self, y, x):
         """Gets condition data for a specified geography location (lon/lat), stores it in the GeoDataFrame, and returns the row."""
         x, y = self.coordinate(x, y)
                                     
@@ -42,7 +42,7 @@ class GISHandler:
         self.points = self.points.append(conditions, ignore_index=True)
         return self.points.iloc[-1:]
     
-    def record(self, x, y, value):
+    def record(self, y, x, value):
         """Records a computed value from the optimizer to a geographic point, returns row recorded to."""
         x, y = self.coordinate(x, y)
         
