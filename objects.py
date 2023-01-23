@@ -1,12 +1,9 @@
-from math import cos, exp, pi
+from math import exp, pi
 from typing import Dict
 import numpy as np
-from scipy.integrate import trapz
 from scipy.integrate import quad
-import math
 from matplotlib import pyplot as plt
 
-    
 class WEC:
     def __init__(self, capture_width: Dict[str,float], 
                 capture_width_ratio_dict: Dict[str,float], 
@@ -103,7 +100,7 @@ class Fish:
         self.carrying_capacity_i = []
     
     def integrand(self, t):
-        return math.exp(self.temp * self.tau)
+        return exp(self.temp * self.tau)
     
     def DO2(self, temp) -> float:
         # specific energy content of feed
@@ -124,15 +121,15 @@ class Fish:
         eps_star = eps - 0.15 * self.F_p * self.C_p * self.A_p / delta
 
         # Water temperature as a function of time
-        time_i = np.linspace(1, 365, 365) 
-        self.time_i = time_i;
+        time_i = np.arange(1, 365, 1)
+        self.time_i = time_i
         
         self.temp = temp
         Temp = temp  
 
         # Fish growth as a function of time
         a = 0.038
-        W_0 = 0 #[g]
+        W_0 = 50 #[g]
         W_i = np.zeros(len(time_i))
         W_dot_i = np.zeros(len(time_i))
         DO2_p_i = np.zeros(len(time_i))
@@ -177,54 +174,68 @@ class Fish:
         self.DO2_c_i = DO2_c_i
         self.DO2_i = DO2_i
         
-        #print("DO2_i=", DO2_i)
-
-        W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)
+        W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)   # index of weight fish = 50 g
         W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000) # index of weight fish = 1 kg
-        OCR = sum(self.DO2_i[W_i_50g:W_i_1kg]) #np.cumsum(self.DO2_i)[W_i_1kg]
-        #print('OCR', OCR)
-                
+        OCR = sum(self.DO2_i[W_i_50g:W_i_1kg])              
         return OCR
 
     @property
     def plot_variable(self):
+        fig, ax = plt.subplots(3,1, figsize=(12, 8))
         ax1 = plt.subplot(3,1,1)
-        ax1.plot(self.time_i, self.W_i/1000, label='W')
+        ax1.plot(self.time_i, self.W_i/1000)
         ax1.set(xlabel='time [day]', ylabel='Fish weight (W [kg])');
-        ax1.legend()
-        plt.show()
+        #ax1.legend()
+        ax1.grid(True)
+        ax1.set_xlim(0, None)
+        #plt.show()
         
         ax2 = plt.subplot(3,1,2)
-        ax2.plot(self.time_i, self.DO2_i , label='DO2')
+        ax2.plot(self.time_i, self.DO2_i)
         ax2.set(xlabel='time [day]', ylabel='DO2 [g/day]');
-        ax2.legend()
-        plt.show()
-               
+        #ax2.legend()
+        ax2.grid(True)
+        ax2.set_xlim(0, None)
+        #plt.show()
+
+        ref_DO2 = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
         W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)
         W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000)
-        W_i_2kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 2000)
-        W_i_3kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 3000)
-        W_i_4kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 4000)
+        ref_DO2[W_i_1kg] = 445
+        print('DO2 for 1kg fish',sum(self.DO2_i[W_i_50g:W_i_1kg]))
+        try:
+            W_i_2kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 2000)
+            ref_DO2[W_i_2kg] = 956
+            print('DO2 for 2kg fish',sum(self.DO2_i[W_i_50g:W_i_2kg]))
+            try:
+                W_i_3kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 3000)
+                ref_DO2[W_i_3kg] = 1496
+                print('DO2 for 3kg fish',sum(self.DO2_i[W_i_50g:W_i_3kg]))
+                try:
+                    W_i_4kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 4000)
+                    ref_DO2[W_i_4kg] = 2049
+                    print('DO2 for 4kg fish',sum(self.DO2_i[W_i_50g:W_i_4kg]))
+                except:
+                    W_i_4kg = np.nan
+            except:
+                W_i_3kg = np.nan
+
+        except:
+            W_i_2kg = np.nan
+        
+        print('fish weight after 365 days',self.W_i[-1])        
         
         ax3 = plt.subplot(3,1,3)
         ax3.plot(self.W_i/1000,  np.cumsum(self.DO2_i), 'b' , label='Total DO2')
 
-        ref_DO2 = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
-        ref_DO2[W_i_1kg] = 445
-        ref_DO2[W_i_2kg] = 956
-        ref_DO2[W_i_3kg] = 1496
-        ref_DO2[W_i_4kg] = 2049
         ax3.plot(self.W_i/1000,  ref_DO2, 'r-o', label='Ref Total DO2')
-        ax3.set(xlabel='Fish weight [kg]', ylabel='DO2 [g]');
+        ax3.set(xlabel='Fish weight [kg]', ylabel='DO2 [g]')
         ax3.legend()
+        ax3.grid(True)
+        ax3.set_xlim(0, None)
+
+        plt.subplots_adjust(hspace=0.3)
         plt.show()
-             
-        print('DO2 for 1kg fish',sum(self.DO2_i[W_i_50g:W_i_1kg]))
-        print('DO2 for 2kg fish',sum(self.DO2_i[W_i_50g:W_i_2kg]))
-        print('DO2 for 3kg fish',sum(self.DO2_i[W_i_50g:W_i_3kg]))
-        print('DO2 for 4kg fish',sum(self.DO2_i[W_i_50g:W_i_4kg]))
-        
-        print('fish weight after 365 days',self.W_i[-1])        
         
 class Pen:
     def __init__(self, D: float, H: float, Depth: float, SD: float, n: float, spacing: float, 
@@ -263,25 +274,14 @@ class Pen:
 
     
     def carrying_capacity(self, fish) -> float:
-        length = self.n * self.D   # Based on worst case
-        #length = self.n * self.D + self.spacing * (self.n-1) # From reference paper for a row farm
-        #length = self.D # for each pen
-
-        #print('length',length)
+        #length = self.D   # Based on worst case
+        length = self.n * self.D + self.spacing * (self.n-1) # From reference paper for a row farm
                     
-        OT = (self.O2_in - fish.O2_min) * length * self.Depth * self.permeability * fish.U_min # [g_O2 / s]
-               
-        #print('OT=' , OT)
-        
+        OT = (self.O2_in - fish.O2_min) * length * self.H * self.permeability * fish.U_min # [g_O2 / s]
         self.TPF_O2 = (OT * 3600 * 24 * 365) / fish.DO2(self.temp)  # [kg-fish / year]
-        #print('fish.DO2=',fish.DO2(self.temp))
-        #print('TPF_O2=',self.TPF_O2)
         
-        carrying_capacity = (OT * 3600 * 24) / fish.DO2_i[-1]
-        #print('DO2_i=',fish.DO2_i[-1])
-        
+        carrying_capacity = (OT * 3600 * 24) / fish.DO2_i[-1] 
         self.carrying_capacity_value = carrying_capacity
-        #print('carrying_capacity=',carrying_capacity)
         
         return carrying_capacity
 

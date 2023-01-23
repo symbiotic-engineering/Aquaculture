@@ -8,9 +8,11 @@ class OpObj(object):
     def __init__(self, x0, x_name, p, max_iter):
         self.x_name, self.p = x_name, p
         self.x0 = x0
-        self.f = np.full(shape=(max_iter+1,), fill_value=np.NaN)
-        self.ineq = np.full(shape=(max_iter+1,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
-        self.eq = np.full(shape=(max_iter+1,0), fill_value=np.NaN)
+        self.f = np.full(shape=(max_iter,), fill_value=np.NaN)
+        self.x_history = np.full(shape=(max_iter,len(x0)), fill_value=np.NaN)
+        self.obj_history = np.full(shape=(max_iter,len(modules.obj_terms(x0, x_name, p))), fill_value=np.NaN)
+        self.ineq = np.full(shape=(max_iter,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
+        self.eq = np.full(shape=(max_iter,0), fill_value=np.NaN)
         self.count = 0
         
     def obj_fun(self, x):
@@ -18,6 +20,8 @@ class OpObj(object):
 
 def cb(xk, obj=None):
     obj.f[obj.count] = obj.obj_fun(xk)
+    obj.x_history[obj.count] = xk
+    obj.obj_history[obj.count] = modules.obj_terms(xk, obj.x_name, obj.p)
     obj.ineq[obj.count] = modules.ineq_constraint(xk, obj.x_name, obj.p)
     obj.eq[obj.count] = modules.eq_constraint(xk, obj.x_name, obj.p)
     obj.count += 1
@@ -102,7 +106,6 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
     
     res = minimize(obj_fun, op_obj.x0, 
                    args=arguments, 
-                   #method='COBYLA',
                    method='SLSQP',
                    #bounds=x_bnds, 
                    constraints=cons,
