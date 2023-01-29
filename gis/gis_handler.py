@@ -52,7 +52,13 @@ class GISHandler:
         
         conditions = {'x': x, 'y': y, 'geometry': Point(x, y), 'result': value}
         self.points = self.points.append(conditions, ignore_index=True)
-        return self.points.iloc[-1:]       
+        return self.points.iloc[-1:]
+    
+    def save(self, name):
+        self.points.to_file(name, driver='GeoJSON')
+        
+    def load(self, name):
+        self.points = gpd.read_file(name)
         
     def coordinate(self, x, y):
         """Rounds coordinates to given precision to prevent uneccessary duplication, in the future could handle projections."""
