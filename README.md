@@ -14,7 +14,23 @@ This repository consists of the following files:
 ## How to use
 Sensitivity Analysis: In order to run the "sensitivity analysis", you can open and run the param_sweep (.ipynb) file.
 
-In order to run the "Wave-powered Aquaculture" optimization code and find optimal wave energy convereter (WEC) and optimal pen considering constant environmental parameters, you can open and run the run_sim_wec&pen (.ipynb) file.
+In order to run the "Wave-powered Aquaculture" optimization code and find optimal wave energy convereter (WEC) and optimal pen considering constant environmental parameters, you can open and run the run_sim_wecpen (.ipynb) file.
+
+In order to run the "Wave-powered Aquaculture" optimization code and find optimal WEC and optimal pen with random values for starting points of design variables to check the convergence of the optimization, you can open and run the run_sim_wecpen_random_init (.ipynb) file.
+
+## Dependencies
+Python 3.8.8 is used to develop this package. 
+For other required libraries, please refer to requirements.txt file.
+
+## Context
+The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab and has been submitted to the International Society of Offshore and Polar Engineers (ISOPE 2023).
+
+## Authors
+- Arezoo Hasankhani, ah844@cornell.edu (Point of contact)
+- Rebecca McCabe, rgm222@cornell.edu 
+- Gabriel Ewig, re27@cornell.edu
+- Eugene Thome Won, etw36@cornell.edu
+- Maha Haji, maha@cornell.edu
 
 In order to run the "Wave-powered Aquaculture" optimization code and find optimal WEC and optimal pen with random values for starting points of design variables to check the convergence of the optimization, you can open and run the run_sim_wec&pen_random_init (.ipynb) file.
 
