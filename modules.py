@@ -31,10 +31,13 @@ def ineq_constraint(x_in, x_name, p):
     wec.P_gen = power(wec, wave_in)
     carrying_capacity = carrying_capacity_func(pen, fish)
     
+    # power supply constraint to ensure supply power demand of net pen
     P_gen_cons = (wec.annual_energy - pen.power) / wec.annual_energy
 
+    # fish yield constraint to ensure a healthy offshore environment
     fish_yield_cons = (carrying_capacity - fish_yield) / carrying_capacity
  
+    # net pen geometry constraint to present a practical design and ratio between diameter and height
     pen_ratio_low_cons = (pen.D - pen.H) / pen.D
     pen_ratio_up_cons = (3*pen.H - pen.D) / (3*pen.H)
     
@@ -256,25 +259,25 @@ def default_values(var_category_names):
         vals['wave_damping_dict'] = (dict(zip(wec_types[0], wave_dampings[0])), '[-]')
         
     if any('p_fish_salmon' in i for i in var_category_names):
-        vals['F_p'] = (0.45, '[-]')
-        vals['F_c'] = (0.07, '[-]')
-        vals['F_f'] = (0.15, '[-]')
-        vals['A_p'] = (0.97, '[-]')
-        vals['A_c'] = (0.6, '[-]')
-        vals['A_f'] = (0.9, '[-]')
-        vals['O_p'] = (1.89, '[gO2/gProtein]')
-        vals['O_c'] = (1.07, '[gO2/gCarbohydrate]')
-        vals['O_f'] = (2.91, '[gO2/gFat]')
-        vals['C_p'] = (5650, '[cal/g]')
-        vals['C_c'] = (4100, '[cal/g]')
-        vals['C_f'] = (9450, '[cal/g]')
-        vals['P_f'] = (0.18, '[-]')
-        vals['P_p'] = (0.18, '[-]')
-        vals['tau'] = (0.08, '[1/C]')
-        vals['loss_rate'] = (0.15, '[-]')
-        vals['harvest_weight'] = (4, '[kg/fish]') # can be between 4 [kg] to 6 [kg] 
-        vals['O2_min'] = (4.41, '[mg/l]')
-        vals['U_min'] = (0.01,'[m/s]') # From NorthEast U.S. Environment
+        vals['F_f'] = (0.15, '[-]')                     #Fraction of Fat in the Feed Mix [-]
+        vals['F_p'] = (0.45, '[-]')                     #Fraction of Protein in the Feed Mix [-]
+        vals['F_c'] = (0.07, '[-]')                     #Fraction of Carbohydrates in the Feed Mix [-]
+        vals['A_f'] = (0.9, '[-]')                      #Assimilated Fraction of Fat [-]
+        vals['A_p'] = (0.97, '[-]')                     #Assimilated Fraction of Protein [-]
+        vals['A_c'] = (0.6, '[-]')                      #Assimilated Fraction of Carbohydrate [-]
+        vals['O_f'] = (2.91, '[gO2/gFat]')              #Oxygen Demand to Break Down Fat [gO2/gFat]
+        vals['O_p'] = (1.89, '[gO2/gProtein]')          #Oxygen Demand to Break Down Protein [gO2/gProtein]
+        vals['O_c'] = (1.07, '[gO2/gCarbohydrate]')     #Oxygen Demand to Break Down Carbohydrate [gO2/gCarbohydrate]
+        vals['C_f'] = (9450, '[cal/g]')                 #Fat's Specific Energy Content [cal/g]
+        vals['C_p'] = (5650, '[cal/g]')                 #Protein's Specific Energy Content [cal/g]
+        vals['C_c'] = (4100, '[cal/g]')                 #Carbohydrate's Specific Energy Content [cal/g]
+        vals['P_f'] = (0.18, '[-]')                     #Fat Content of Fish [-]
+        vals['P_p'] = (0.18, '[-]')                     #Protein Content of Fish [-]
+        vals['tau'] = (0.08, '[1/C]')                   #Inverse Temperature Scale [1/C]
+        vals['loss_rate'] = (0.15, '[-]')               #Fish Loss Rate [-]
+        vals['harvest_weight'] = (4, '[kg/fish]')       #Fish Harvest Size [kg/fish]  # can be between 4 [kg] to 6 [kg] 
+        vals['O2_min'] = (4.41, '[mg/l]')               #Dissolved Oxygen Threshold [%]
+        vals['U_min'] = (0.01,'[m/s]')                  # From NorthEast U.S. Environment
         vals['U_max'] = (2,'[m/s]')
         vals['temp_min'] = (2,'[C]')
         vals['temp_max'] = (28,'[C]')
