@@ -9,6 +9,7 @@ This repository consists of the following files:
 - run_sim_wec&pen: top-level script to perform the "Wave-powered Aquaculture" optimization code using default values for environmental parameters.
 - run_sim_wec&pen_random_init: top-level script to perform the "Wave-powered Aquaculture" optimization code using random values for starting points of design variables to check the convergence of the optimization.
 - param_sweep: top-level script to perform the "sensitivity analysis".
+- requirements.txt: list of the required libraries.
 
 ## How to use
 Sensitivity Analysis: In order to run the "sensitivity analysis", you can open and run the param_sweep (.ipynb) file.
