@@ -222,11 +222,11 @@ def variable_lookup(var_category_names):
 def default_values(var_category_names):
     vals = {}
     wec_types = (['attenuator','terminator','point absorber'], '[-]')
-    capture_width_ratios = ([0.16, 0.34, 0.35], '[-]') 
+    capture_width_ratios = ([0.16, 0.34, 0.16], '[-]') 
     wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = (76, '[m]')
+        vals['capture_width'] = (74, '[m]')
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
@@ -234,11 +234,11 @@ def default_values(var_category_names):
     if any('x_pen' in i for i in var_category_names):
         vals['pen_diameter'] = (25, '[m]') 
         vals['pen_height'] = (10, '[m]')  
-        vals['stock_density'] = (30 , '[kg/m^3]')
+        vals['stock_density'] = (20 , '[kg/m^3]')
    
     if any('p_pen' in i for i in var_category_names):
-        vals['num_pens'] = (18, '[-]')  
-        vals['spacing'] = (150, '[m]') 
+        vals['num_pens'] = (12, '[-]')  
+        vals['spacing'] = (150, '[m]')
         vals['pen_depth'] = (10, '[m]')   
         vals['pen_unit_cost'] = (100, '[$/m^3]')    # 80 $/m^3 for net pen + 20 $/m^3 for mooring
         vals['permeability'] = (0.8, '[-]')      
@@ -291,12 +291,12 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (20, 85)     #[m]
+        bnds['capture_width'] = (20, 80)     #[m]
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (25, 45)       #[m] 
-        bnds['pen_height'] = (10, 30)        #[m]
-        bnds['stock_density'] = (15, 30)     #[kg/m^3]
+        bnds['pen_diameter'] = (20, 45)       #[m] 25-45
+        bnds['pen_height'] = (8, 30)        #[m]  10-30
+        bnds['stock_density'] = (10, 20)     #[kg/m^3]
     
     if any('x_env' in i for i in var_category_names):
         bnds['temp'] = (7, 22)              #[C]

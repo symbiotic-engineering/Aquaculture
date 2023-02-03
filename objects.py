@@ -45,7 +45,7 @@ class Wave:
     def __init__(self, Hs: float, T: float) -> None:
         self.Hs = Hs
         self.T = T
-        self.rho = 1000
+        self.rho = 1030
         self.g = 9.81
     
     @property
