@@ -291,11 +291,11 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (20, 80)     #[m]
+        bnds['capture_width'] = (20, 85)     #[m]
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (20, 45)       #[m] 25-45
-        bnds['pen_height'] = (8, 30)        #[m]  10-30
+        bnds['pen_diameter'] = (25, 45)      #[m]
+        bnds['pen_height'] = (11, 30)        #[m]
         bnds['stock_density'] = (10, 20)     #[kg/m^3]
     
     if any('x_env' in i for i in var_category_names):
