@@ -9,14 +9,17 @@ class WEC:
                 capture_width_ratio_dict: Dict[str,float], 
                 wave_damping_dict: Dict[str,float], 
                 wec_type: str,
-                unit_cost: float) -> None:
+                unit_cost: float,
+                capacity_factor: float,
+                eta: float) -> None:
         
         self.capture_width = capture_width
         self.capture_width_ratio_dict = capture_width_ratio_dict
         self.wave_damping_dict = wave_damping_dict
         self.wec_type = wec_type
         self.unit_cost = unit_cost
-        self.capacity_factor = 0.3
+        self.capacity_factor = capacity_factor
+        self.eta = eta
         
         self.P_gen = []
         
@@ -40,17 +43,27 @@ class WEC:
     def capture_width_ratio(self) -> float:
         capture_width_ratio = self.capture_width_ratio_dict[self.wec_type]
         return capture_width_ratio
+    
+    def P_mechanical(self, wave_power):
+        P_mechanical = wave_power * self.capture_width * self.capture_width_ratio
+        return P_mechanical 
+    
+    def P_electrical(self, wave):
+        P_electrical = self.eta * self.P_mechanical(wave.P_wave)
+        return P_electrical
 
 class Wave:
-    def __init__(self, Hs: float, T: float) -> None:
+    def __init__(self, Hs: float, Te: float) -> None:
         self.Hs = Hs
-        self.T = T
+        self.Te = Te  # energy period
         self.rho = 1030
         self.g = 9.81
     
     @property
-    def power(self) -> float:
-        P_wave = 1/32 * 1/pi * self.rho * self.g**2 * self.Hs**2 * self.T  #for regular wave
+    def P_wave(self) -> float:
+        #P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (32 * pi)  #for regular wave
+        P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (64 * pi) #for irregular wave
+        #P_wave = 7000
         return P_wave
 
 class Fish:
@@ -274,8 +287,8 @@ class Pen:
 
     
     def carrying_capacity(self, fish) -> float:
-        #length = self.D   # Based on worst case
-        length = self.n * self.D + self.spacing * (self.n-1) # From reference paper (Stigebrandt'1999, MOM (Monitoring-Ongrowing fish farms-Modelling)) for a row farm
+        length = self.n * self.D  
+        #length = self.n * self.D + self.spacing * (self.n-1) # From reference paper (Stigebrandt'1999, MOM (Monitoring-Ongrowing fish farms-Modelling)) for a row farm
                     
         OT = (self.O2_in - fish.O2_min) * length * self.H * self.permeability * fish.U_min # [g_O2 / s]
         self.TPF_O2 = (OT * 3600 * 24 * 365) / fish.DO2(self.temp)  # [kg-fish / year]

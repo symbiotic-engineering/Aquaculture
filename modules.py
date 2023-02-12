@@ -48,7 +48,22 @@ def ineq_constraint(x_in, x_name, p):
 
 
 def eq_constraint(x_in, x_name, p):
-    h = np.array([0])
+    # merge input dicts
+    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
+
+    # run each module 
+    wave_out = wave_climate(wec,wave_in)
+    fish_yield = fish_yield_func(wave_out, pen, fish)
+    wec.P_gen = power(wec, wave_in)
+    carrying_capacity = carrying_capacity_func(pen, fish)
+
+    # power supply constraint to ensure supply power demand of net pen
+    P_gen_cons = (wec.annual_energy - pen.power)
+    # fish yield constraint to ensure a healthy offshore environment
+    fish_yield_cons = (carrying_capacity- fish_yield)
+
+    # outputs
+    h = np.array([P_gen_cons, fish_yield_cons])
         
     return h
 
@@ -63,10 +78,11 @@ def input_merge(x_in, x_name, p):
     ins = {**x, **p}
 
     # create objects
-    wave_in = Wave(ins['wave_height'], ins['wave_period'])
+    wave_in = Wave(ins['wave_height'], ins['wave_energy_period'])
     
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
-            ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'])
+            ins['wave_damping_dict'], ins['wec_type'], ins['wec_unit_cost'],
+            ins['capacity_factor'], ins['eta'])
 
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
               ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['temp'], 
@@ -96,16 +112,15 @@ def plot_variable(x_in, x_name, p):
 def power(wec: WEC, wave: Wave) -> float:
     assert(isinstance(wec,WEC))
     assert(isinstance(wave,Wave))
-    P_gen = wave.power * wec.capture_width * wec.capture_width_ratio
     
-    return P_gen
+    return wec.P_electrical(wave)
 
 
 def P_rated(x_in, x_name, p_in: dict):
     # merge input dicts
     wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
     wec.P_gen = power(wec, wave_in)
-    
+    print(' '*2, "wave power  ", "{:10.3f}".format(wave_in.P_wave/1000), '[kW]')
     return wec.P_gen/wec.capacity_factor
     
 
@@ -130,8 +145,8 @@ def wave_climate(wec: WEC, wave: Wave) -> Wave:
     assert(isinstance(wec,WEC))
     assert(isinstance(wave,Wave))
     Hs = wec.wave_damping * wave.Hs
-    T = wave.T
-    wave_out = Wave(Hs,T)
+    Te = wave.Te
+    wave_out = Wave(Hs,Te)
     return wave_out
 
 def fish_yield_func(wave: Wave, pen: Pen, fish: Fish) -> float:
@@ -175,7 +190,7 @@ def variable_lookup(var_category_names):
         var_list.append('temp')
         var_list.append('O2_in')
         var_list.append('wave_height')
-        var_list.append('wave_period')
+        var_list.append('wave_energy_period')
         
     if any('p_env' in i for i in var_category_names):
         var_list.append('salinity')
@@ -185,6 +200,8 @@ def variable_lookup(var_category_names):
         var_list.append('wec_unit_cost')
         var_list.append('capture_width_ratio_dict')
         var_list.append('wave_damping_dict')
+        var_list.append('eta')
+        var_list.append('capacity_factor')
     
     if any('p_fish' in i for i in var_category_names):
         var_list.append('F_f')             #Fraction of Fat in the Feed Mix [-]
@@ -222,18 +239,18 @@ def variable_lookup(var_category_names):
 def default_values(var_category_names):
     vals = {}
     wec_types = (['attenuator','terminator','point absorber'], '[-]')
-    capture_width_ratios = ([0.16, 0.34, 0.16], '[-]') 
+    capture_width_ratios = ([0.16, 0.34, 1], '[-]') 
     wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = (74, '[m]')
+        vals['capture_width'] = (20.73054484, '[m]')
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = (25, '[m]') 
-        vals['pen_height'] = (10, '[m]')  
+        vals['pen_diameter'] = (21.35566624, '[m]') 
+        vals['pen_height'] = (19.29664992, '[m]')  
         vals['stock_density'] = (20 , '[kg/m^3]')
    
     if any('p_pen' in i for i in var_category_names):
@@ -244,19 +261,21 @@ def default_values(var_category_names):
         vals['permeability'] = (0.8, '[-]')      
         
     if any('x_env' in i for i in var_category_names):
-        vals['temp'] = (10.07, 'C')
-        vals['O2_in'] = (9.44,'[mg/l]')
-        vals['wave_height'] = (1.04, '[m]')
-        vals['wave_period'] = (5.73, '[s]') 
+        vals['temp'] = (10.29, 'C') 
+        vals['O2_in'] = (9.5,'[mg/l]')
+        vals['wave_height'] = (1.37, '[m]')  
+        vals['wave_energy_period'] = (6.44, '[s]')
     
     if any('p_env' in i for i in var_category_names):
-        vals['salinity'] = (31.74, '[PSU]')
+        vals['salinity'] = (31.6, '[PSU]')
         vals['U'] = (.1, '[m/s]')
     
     if any('p_wec' in i for i in var_category_names):
         vals['wec_unit_cost'] = (0.45 * 1.19, '[$/kWh]')   # 'point absorber' * inflation rate from 2014 to 2022
         vals['capture_width_ratio_dict'] = (dict(zip(wec_types[0], capture_width_ratios[0])), '[-]')
         vals['wave_damping_dict'] = (dict(zip(wec_types[0], wave_dampings[0])), '[-]')
+        vals['eta'] = (0.8,'[-]') 
+        vals['capacity_factor'] = (0.3,'[-]') 
         
     if any('p_fish_salmon' in i for i in var_category_names):
         vals['F_f'] = (0.15, '[-]')                     #Fraction of Fat in the Feed Mix [-]
@@ -291,16 +310,16 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (20, 85)     #[m]
+        bnds['capture_width'] = (1, 23)      #[m]  
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (25, 45)      #[m]
-        bnds['pen_height'] = (11, 30)        #[m]
+        bnds['pen_diameter'] = (10, 45)      #[m]  
+        bnds['pen_height'] = (10, 30)        #[m]  
         bnds['stock_density'] = (10, 20)     #[kg/m^3]
     
     if any('x_env' in i for i in var_category_names):
-        bnds['temp'] = (7, 22)              #[C]
-        bnds['O2_in'] = (7, 10)             #[mg/l]
+        bnds['temp'] = (1, 50)              #[C] 
+        bnds['O2_in'] = (1, 50)             #[mg/l]
         bnds['wave_height'] = (0.2, 3)      #[m]
         bnds['wave_period'] = (1, 12)       #[s]
     

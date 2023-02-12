@@ -12,7 +12,7 @@ class OpObj(object):
         self.x_history = np.full(shape=(max_iter,len(x0)), fill_value=np.NaN)
         self.obj_history = np.full(shape=(max_iter,len(modules.obj_terms(x0, x_name, p))), fill_value=np.NaN)
         self.ineq = np.full(shape=(max_iter,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
-        self.eq = np.full(shape=(max_iter,0), fill_value=np.NaN)
+        self.eq = np.full(shape=(max_iter,len(modules.eq_constraint(x0, x_name, p))), fill_value=np.NaN)
         self.count = 0
         
     def obj_fun(self, x):
@@ -88,10 +88,9 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
     op_obj = OpObj(x0, x_name, p, max_iter) 
     arguments = (x_name, p)
     cons = []
-    cons.append({'type': 'ineq', 
-                 'fun': modules.ineq_constraint, 'args': arguments})
+    cons.append({'type': 'ineq', 'fun': modules.ineq_constraint, 'args': arguments})
+    #cons.append({'type': 'eq', 'fun': modules.eq_constraint, 'args': arguments})
     
-    # adding x_bounds as constrains for COBYLA
     for factor in range(len(x_bnds)):
         lower, upper = x_bnds[factor]
         l = {'type': 'ineq',
