@@ -61,9 +61,18 @@ def ineq_constraint(x_in, x_name, p):
 
 
 def eq_constraint(x_in, x_name, p):
+<<<<<<< HEAD
+<<<<<<< HEAD
     # merge input dicts
     wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
     
+=======
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+    # merge input dicts
+    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
+    
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
     h = np.array([0])
         
     return h
@@ -125,6 +134,11 @@ def power(wec: WEC, wave: Wave) -> float:
     
     P_gen = wave.power * wec.capture_width * wec.capture_width_ratio
     
+<<<<<<< HEAD
+    P_gen = wave.power * wec.capture_width * wec.capture_width_ratio
+    
+=======
+>>>>>>> parent of ccb861c (updated for ISOPE release)
     return P_gen
 
 
@@ -211,6 +225,16 @@ def variable_lookup(var_category_names):
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
         var_list.append('O2_in')
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        var_list.append('wave_height')
+        var_list.append('wave_period')
+        
+    if any('p_env' in i for i in var_category_names):
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
         var_list.append('salinity')
         var_list.append('U')
         var_list.append('wave_height')
@@ -257,32 +281,72 @@ def variable_lookup(var_category_names):
 def default_values(var_category_names):
     vals = {}
     wec_types = (['attenuator','terminator','point absorber'], '[-]')
+<<<<<<< HEAD
     capture_width_ratios = ([0.16, 0.34, 0.35], '[-]') 
     wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
         vals['capture_width'] = (4, '[m]')     #12
+<<<<<<< HEAD
+=======
+    capture_width_ratios = ([0.16, 0.34, 0.16], '[-]') 
+    wave_dampings = ([0, 0.13, 0.17], '[-]')            
+
+    if any('x_wec' in i for i in var_category_names):
+        vals['capture_width'] = (74, '[m]')
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
         vals['pen_diameter'] = (15, '[m]')    #20 
         vals['pen_height'] = (4, '[m]')      #6  
         vals['spacing'] = (150, '[m]')          
         vals['stock_density'] = (20 , '[kg/m^3]') #20
         vals['pen_depth'] = (10, '[m]')         
+<<<<<<< HEAD
+=======
+        vals['pen_diameter'] = (25, '[m]') 
+        vals['pen_height'] = (10, '[m]')  
+        vals['stock_density'] = (20 , '[kg/m^3]')
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
    
     if any('p_pen' in i for i in var_category_names):
         vals['num_pens'] = (18, '[-]')          
         
     if any('x_env' in i for i in var_category_names):
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
         vals['temp'] = (16, 'C')               
         vals['salinity'] = (33, '[PSU]')
         vals['U'] = (.2, '[m/s]')
         vals['O2_in'] = (8,'[mg/l]')                      
         vals['wave_height'] = (1.4, '[m]')     
         vals['wave_period'] = (8.33, '[s]')     
+<<<<<<< HEAD
+=======
+        vals['temp'] = (10.07, 'C')
+        vals['O2_in'] = (9.44,'[mg/l]')
+        vals['wave_height'] = (1.04, '[m]')
+        vals['wave_period'] = (5.73, '[s]') 
+    
+    if any('p_env' in i for i in var_category_names):
+        vals['salinity'] = (31.74, '[PSU]')
+        vals['U'] = (.1, '[m/s]')
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
     
     if any('p_wec' in i for i in var_category_names):
         vals['wec_unit_cost'] = (0.45 * 1.19, '[$/kWh]')   # 'point absorber' * inflation rate from 2014 to 2022
@@ -347,6 +411,8 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
+<<<<<<< HEAD
+<<<<<<< HEAD
         bnds['capture_width'] = (1, 20)     #[m] 40
     
     if any('x_pen' in i for i in var_category_names):
@@ -361,6 +427,33 @@ def bnds_values(var_category_names):
         bnds['salinity'] = (26, 36)         #[PSU]
         bnds['O2_in'] = (7, 10)             #[mg/l]
         bnds['U'] = (0.01, 0.55)            #[m/s]
+=======
+        bnds['capture_width'] = (20, 85)     #[m]
+    
+    if any('x_pen' in i for i in var_category_names):
+        bnds['pen_diameter'] = (25, 45)      #[m]
+        bnds['pen_height'] = (11, 30)        #[m]
+        bnds['stock_density'] = (10, 20)     #[kg/m^3]
+=======
+        bnds['capture_width'] = (1, 20)     #[m] 40
+    
+    if any('x_pen' in i for i in var_category_names):
+        bnds['pen_diameter'] = (10, 40)      #[m]
+        bnds['pen_height'] = (3, 30)        #[m] (5,30)
+        bnds['spacing'] = (100, 300)         #[m]
+        bnds['stock_density'] = (15, 30)     #[kg/m^3]
+        bnds['pen_depth'] = (1, 30)         #[m] 
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
+    
+    if any('x_env' in i for i in var_category_names):
+        bnds['temp'] = (7, 22)              #[C]
+        bnds['salinity'] = (26, 36)         #[PSU]
+        bnds['O2_in'] = (7, 10)             #[mg/l]
+<<<<<<< HEAD
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+        bnds['U'] = (0.01, 0.55)            #[m/s]
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
         bnds['wave_height'] = (0.2, 3)      #[m]
         bnds['wave_period'] = (1, 12)       #[s]
     
