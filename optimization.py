@@ -8,9 +8,23 @@ class OpObj(object):
     def __init__(self, x0, x_name, p, max_iter):
         self.x_name, self.p = x_name, p
         self.x0 = x0
+<<<<<<< HEAD
+<<<<<<< HEAD
         self.f = np.full(shape=(max_iter+1,), fill_value=np.NaN)
         self.ineq = np.full(shape=(max_iter+1,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
         self.eq = np.full(shape=(max_iter+1,0), fill_value=np.NaN)
+=======
+        self.f = np.full(shape=(max_iter,), fill_value=np.NaN)
+        self.x_history = np.full(shape=(max_iter,len(x0)), fill_value=np.NaN)
+        self.obj_history = np.full(shape=(max_iter,len(modules.obj_terms(x0, x_name, p))), fill_value=np.NaN)
+        self.ineq = np.full(shape=(max_iter,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
+        self.eq = np.full(shape=(max_iter,0), fill_value=np.NaN)
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+        self.f = np.full(shape=(max_iter+1,), fill_value=np.NaN)
+        self.ineq = np.full(shape=(max_iter+1,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
+        self.eq = np.full(shape=(max_iter+1,0), fill_value=np.NaN)
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
         self.count = 0
         
     def obj_fun(self, x):

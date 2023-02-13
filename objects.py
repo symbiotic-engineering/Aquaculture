@@ -48,7 +48,11 @@ class Wave:
     def __init__(self, Hs: float, T: float) -> None:
         self.Hs = Hs
         self.T = T
+<<<<<<< HEAD
         self.rho = 1000
+=======
+        self.rho = 1030
+>>>>>>> parent of ccb861c (updated for ISOPE release)
         self.g = 9.81
     
     @property
@@ -263,11 +267,22 @@ class Pen:
 
     
     def carrying_capacity(self, fish) -> float:
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
         length = self.n * self.D   # Based on worst case
         #length = self.n * self.D + self.spacing * (self.n-1) # From reference paper for a row farm
         #length = self.D # for each pen
 
         #print('length',length)
+<<<<<<< HEAD
+=======
+        #length = self.D   # Based on worst case
+        length = self.n * self.D + self.spacing * (self.n-1) # From reference paper (Stigebrandt'1999, MOM (Monitoring-Ongrowing fish farms-Modelling)) for a row farm
+>>>>>>> parent of ccb861c (updated for ISOPE release)
+=======
+>>>>>>> parent of 9895b23 (updated ISOPE2023)
                     
         OT = (self.O2_in - fish.O2_min) * length * self.Depth * self.permeability * fish.U_min # [g_O2 / s]
                
