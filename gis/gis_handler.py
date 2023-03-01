@@ -63,7 +63,7 @@ class GISHandler:
                  conditions[key] = raster.read(1)[index] # yes, by default this only reads the first band, but this is probably okay
             except IndexError as error:
                 print('failed to read {} raster: {}'.format(key, error))
-            if conditions[key] <= -1000: # yes, this assumes that zero is not a valid value. this is true for our current rasters, but isn't necessarily correct
+            if conditions[key] == 0: # yes, this assumes that zero is not a valid value. this is true for our current rasters, but isn't necessarily correct
                 conditions['ok-conditions'] = False
         
         self.points = self.points.append(conditions, ignore_index=True)
