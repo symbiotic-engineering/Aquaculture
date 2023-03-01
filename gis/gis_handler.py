@@ -1,7 +1,11 @@
 import geopandas as gpd
 import rasterio
 from shapely.geometry import Point
+import warnings
+from shapely.errors import ShapelyDeprecationWarning
 
+# ignore shapely 1.8 deprecation warnings
+warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 precision = 5 # precision of input coordinates, 5dec~=1.1m
 
 class GISHandler:
@@ -11,9 +15,8 @@ class GISHandler:
         """Initializes handler by creating a GeoDataFrame to store point measurement data and a dictionary of loaded raster files."""
         self.conditions = {}
         self.conflicts = {}
-        self.points = gpd.GeoDataFrame(columns=['x', 'y', 'ok-conditions', 'ok-scope', 'ok-conflicts', 'result', 'geometry'], geometry='geometry')
-        
         self.scope = gpd.read_file(scope)
+        self.points = gpd.GeoDataFrame(columns=['x', 'y', 'geometry', 'result', 'ok-conditions', 'ok-scope', 'ok-conflicts'], geometry='geometry')
     
         for key, src in conditions.items():
             if key in self.conditions:
@@ -29,16 +32,16 @@ class GISHandler:
                 
         self.extent = self.extent()
     
-    def query(self, y, x):
+    def query(self, x, y):
         """Gets condition data for a specified geography location (lon/lat), stores it in the GeoDataFrame, and returns the row."""
         x, y = self.coordinate(x, y)
                                     
-        #if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
-        #    print('point exists, returning original data')
-        #    return self.points.loc[(self.points.x==x) & (self.points.y==y)]
+        if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
+            print('point exists, returning original data')
+            return self.points.loc[(self.points.x==x) & (self.points.y==y)]
         
         point = Point(x, y)
-        conditions = {'x': x, 'y': y, 'ok-conditions': True, 'ok-scope': True, 'ok-conflicts': True, 'geometry': point}
+        conditions = {'x': x, 'y': y, 'geometry': point, 'ok-conditions': True, 'ok-scope': True, 'ok-conflicts': True}
         
         # check if point is offshore in desired scope
         for polygon in self.scope['geometry']:
@@ -66,7 +69,7 @@ class GISHandler:
         self.points = self.points.append(conditions, ignore_index=True)
         return self.points.iloc[-1:]
     
-    def record(self, y, x, value):
+    def record(self, x, y, value):
         """Records a computed value from the optimizer to a geographic point, returns row recorded to."""
         x, y = self.coordinate(x, y)
         
@@ -77,6 +80,18 @@ class GISHandler:
         conditions = {'x': x, 'y': y, 'geometry': Point(x, y), 'result': value}
         self.points = self.points.append(conditions, ignore_index=True)
         return self.points.iloc[-1:]
+    
+    def query_grid(self, x_min, x_max, y_min, y_max, xy_delta):
+        self.grid = gpd.GeoDataFrame(columns=['x', 'y', 'geometry', 'result', 'ok-conditions', 'ok-scope', 'ok-conflicts'], geometry='geometry')
+        
+        x = x_min
+        y = y_min
+        while x <= x_max:
+            while y <= y_max:
+                self.query(x, y)
+                y += xy_delta
+            y=y_min
+            x += xy_delta
     
     def save(self, name):
         self.points.to_file(name, driver='GeoJSON')
