@@ -3,14 +3,25 @@ from scipy.optimize import minimize
 from functools import partial
 import modules
 
-
+class OpData():
+    def __init__(self, name):
+        self.name = name
+        self.list, self.nom_dict, self.unit, self.bnds, self.label = default_value(name)
+    
+    @property
+    def nom0(self):
+        data0 = []
+        for i in range(len(self.list)):
+            data0.append(self.nom_dict[self.list[i]])
+        return data0
+    
 class OpObj(object):
     def __init__(self, x0, x_name, p, max_iter):
         self.x_name, self.p = x_name, p
         self.x0 = x0
         self.f = np.full(shape=(max_iter,), fill_value=np.NaN)
         self.x_history = np.full(shape=(max_iter,len(x0)), fill_value=np.NaN)
-        self.obj_history = np.full(shape=(max_iter,len(modules.obj_terms(x0, x_name, p))), fill_value=np.NaN)
+        self.obj_term_history = np.full(shape=(max_iter,len(modules.obj_terms(x0, x_name, p))), fill_value=np.NaN)
         self.ineq = np.full(shape=(max_iter,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
         self.eq = np.full(shape=(max_iter,len(modules.eq_constraint(x0, x_name, p))), fill_value=np.NaN)
         self.count = 0
@@ -21,7 +32,7 @@ class OpObj(object):
 def cb(xk, obj=None):
     obj.f[obj.count] = obj.obj_fun(xk)
     obj.x_history[obj.count] = xk
-    obj.obj_history[obj.count] = modules.obj_terms(xk, obj.x_name, obj.p)
+    obj.obj_term_history[obj.count] = modules.obj_terms(xk, obj.x_name, obj.p)
     obj.ineq[obj.count] = modules.ineq_constraint(xk, obj.x_name, obj.p)
     obj.eq[obj.count] = modules.eq_constraint(xk, obj.x_name, obj.p)
     obj.count += 1
@@ -55,15 +66,17 @@ def argument_fun(x_name, p_name, p_vals, all_vars):
     for i in range(len(all_vars)):
         if all_vars[i] not in all_input:
             default_vars.append(all_vars[i])
-    p_list, p, p_unit, p_bnds, p_label = default_value(default_vars)
+    p = OpData(default_vars)
     
     # fill non-default parameters
     if p_name!=[]:
-        p_list = modules.variable_lookup(p_name)
-        for i in range(len(p_list)):
-            p[p_list[i]] = p_vals[p_list[i]]
+        p.name = p.name + p_name
+        new_list = modules.variable_lookup(p_name)
+        p.list = p.list + new_list
+        for i in range(len(new_list)):
+            p.nom_dict[new_list[i]] = p_vals[new_list[i]]
           
-    return p_list, p, p_unit, p_bnds, p_label
+    return p
 
 #'Finding optimal '+ x + ' while holding '+ p + ' constant.'
 def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
@@ -71,28 +84,26 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
     # non-default values p_vals, and other parameters set to default values.
     
     # design variables
-    x_list, x0_val, x_unit, x_bnds, x_label = default_value(x_name)
-    x = [x_label,x_list]
+    x = OpData(x_name)
     x0 = []
     if x_vals==[]:
-        for i in range(len(x_list)):
-            x0.append(x0_val[x_list[i]])
+        x0 = x.num0
     else:
         x0 = x_vals
     
     # fill default parameters
-    p_list, p, p_unit, p_bnds, p_label = argument_fun(x_name, p_name, p_vals, all_vars)
+    p = argument_fun(x.name, p_name, p_vals, all_vars)
 
         
     # set up optimization problem
-    op_obj = OpObj(x0, x_name, p, max_iter) 
-    arguments = (x_name, p)
+    op_obj = OpObj(x0, x.name, p.nom_dict, max_iter) 
+    arguments = (x.name, p.nom_dict)
     cons = []
     cons.append({'type': 'ineq', 'fun': modules.ineq_constraint, 'args': arguments})
     #cons.append({'type': 'eq', 'fun': modules.eq_constraint, 'args': arguments})
     
-    for factor in range(len(x_bnds)):
-        lower, upper = x_bnds[factor]
+    for factor in range(len(x.bnds)):
+        lower, upper = x.bnds[factor]
         l = {'type': 'ineq',
              'fun': lambda x, lb=lower, i=factor: x[i] - lb}
         u = {'type': 'ineq',
@@ -100,7 +111,7 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
         cons.append(l)
         cons.append(u)
 
-    options={"maxiter":max_iter}  #"ftol": 1e-4
+    options={"maxiter":max_iter, 'eps': .1}  # "ftol": 1e-4
     
     
     res = minimize(obj_fun, op_obj.x0, 
@@ -111,4 +122,4 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
                    options=options,
                    callback=partial(cb, obj=op_obj))
     
-    return res, op_obj
+    return res, op_obj, p

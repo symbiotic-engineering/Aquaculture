@@ -1,71 +1,104 @@
 import numpy as np
-from objects import *    
+from objects import * 
+import math 
 
 def obj(x_in, x_name, p_in: dict):
-    cost_per_yield, _, _, _, _ = obj_terms(x_in, x_name, p_in)
-    J = np.array(cost_per_yield)
-    return J
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    if aqua_obj.valid_point:
+        return aqua_obj.vessel.price #aqua_obj.cost_per_yield
+    else:
+        return 50000
 
-def obj_terms(x_in, x_name, p_in: dict):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out, pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    
-    price = econ(wec, pen)
-   
-    # outputs
-    cost_per_yield = price/fish_yield 
-    return cost_per_yield, price, fish_yield, pen.price, wec.price
-
-def ineq_constraint(x_in, x_name, p):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out, pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    carrying_capacity = carrying_capacity_func(pen, fish)
-    
-    # power supply constraint to ensure supply power demand of net pen
-    P_gen_cons = (wec.annual_energy - pen.power) / wec.annual_energy
-
-    # fish yield constraint to ensure a healthy offshore environment
-    fish_yield_cons = (carrying_capacity - fish_yield) / carrying_capacity
- 
-    # net pen geometry constraint to present a practical design and ratio between diameter and height
-    pen_ratio_low_cons = (pen.D - pen.H) / pen.D
-    pen_ratio_up_cons = (3*pen.H - pen.D) / (3*pen.H)
-    
-    # outputs
-    g = np.array([P_gen_cons, fish_yield_cons, pen_ratio_low_cons, pen_ratio_up_cons])
-
+def ineq_constraint(x_in, x_name, p_in: dict):
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    if aqua_obj.valid_point: 
+        g = np.array([aqua_obj.P_gen_cons, aqua_obj.fish_yield_cons, 
+                      aqua_obj.pen_ratio_low_cons, aqua_obj.pen_ratio_up_cons,
+                      aqua_obj.env_Umin_cons, aqua_obj.env_Umax_cons,
+                      aqua_obj.env_tempmin_cons, aqua_obj.env_tempmax_cons, 
+                      aqua_obj.env_salinitymin_cons, aqua_obj.env_salinitymax_cons, 
+                      aqua_obj.env_O2_min_cons])
+    else: 
+        g = np.array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1])
     return g
 
 
-def eq_constraint(x_in, x_name, p):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
-
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out, pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    carrying_capacity = carrying_capacity_func(pen, fish)
-
-    # power supply constraint to ensure supply power demand of net pen
-    P_gen_cons = (wec.annual_energy - pen.power)
-    # fish yield constraint to ensure a healthy offshore environment
-    fish_yield_cons = (carrying_capacity- fish_yield)
-
-    # outputs
-    h = np.array([P_gen_cons, fish_yield_cons])
-        
+def eq_constraint(x_in, x_name, p_in: dict):
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    if aqua_obj.valid_point: 
+        h = np.array([aqua_obj.P_gen_cons, aqua_obj.fish_yield_cons])
+    else:
+        h = np.array([-1, -1])
     return h
+
+def obj_terms(x_in, x_name, p_in: dict):
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    if aqua_obj.valid_point: 
+        return np.array([aqua_obj.price, aqua_obj.pen.fish_yield, aqua_obj.pen.price, aqua_obj.wec.price])
+    else:
+        return np.array([-1, -1, -1, -1])
+
+class Aqua_Obj(object):
+    def __init__(self, x0, x_name, p):
+        self.x0 = x0
+        self.x_name = x_name
+        self.p = p
+        
+        self.wec, self.wave_in, self.pen, self.fish, self.vessel, self.valid_point, self.gis_data = input_merge(self.x0, self.x_name, self.p)
+        
+        if self.valid_point:
+            self.fish_yield_func()
+
+            if math.isnan(self.wec.capture_width):
+                self.wec.capture_width = self.wec.set_capture_width(self.pen, self.wave_in)
+            
+            print('    ',self.wec.capture_width, self.pen.power, self.wave_in.P_wave)
+
+            self.wec.P_gen = self.power()
+            self.carrying_capacity = self.pen.carrying_capacity(self.fish)
+            self.cost_per_yield = self.price/self.pen.fish_yield 
+
+            # power supply constraint to ensure supply power demand of net pen
+            self.P_gen_cons = (self.wec.annual_energy - self.pen.power) / self.wec.annual_energy
+
+            # fish yield constraint to ensure a healthy offshore environment
+            self.fish_yield_cons = (self.carrying_capacity - self.pen.fish_yield) / self.carrying_capacity
+        
+            # net pen geometry constraint to present a practical design and ratio between diameter and height
+            self.pen_ratio_low_cons = (self.pen.D - self.pen.H) / self.pen.D
+            self.pen_ratio_up_cons = (3*self.pen.H - self.pen.D) / (3*self.pen.H)
+
+            self.env_Umin_cons = self.pen.U - self.fish.U_min
+            self.env_Umax_cons = self.fish.U_max - self.pen.U
+            self.env_tempmin_cons = self.pen.temp - self.fish.temp_min
+            self.env_tempmax_cons = self.fish.temp_max - self.pen.temp
+            self.env_salinitymin_cons = self.pen.salinity - self.fish.salinity_min
+            self.env_salinitymax_cons = self.fish.salinity_max - self.pen.salinity
+            self.env_O2_min_cons = self.pen.O2_in - self.fish.O2_min
+
+    @property
+    def price(self):
+        price = self.wec.price + self.pen.price + self.vessel.price + self.fish_feed_price
+        return price
+    
+    def fish_yield_func(self):
+        survival_rate = (1-self.fish.loss_rate) 
+        self.pen.fish_yield = self.pen.biomass * survival_rate 
+        return 
+    
+    def power(self):
+        return self.wec.P_electrical(self.wave_in)
+    
+    @property
+    def fish_feed_price(self):    
+        return self.pen.biomass * self.fish.FCR * self.fish.feed_unit_cost
+    
+    def plot_variable(self):
+        self.fish.plot_variable
+        return
+    
+    def carrying_capacity_print(self):
+        return self.pen.TPF_O2, self.carrying_capacity
 
 def input_merge(x_in, x_name, p):
     # merge input dicts
@@ -75,6 +108,30 @@ def input_merge(x_in, x_name, p):
     for i in range(len(x_list)):
         x[x_list[i]] = x_in[i]
  
+    gis_data = []
+    if 'pos_env' in x_name:
+        if 'handler' in p:
+            print('lat=', x_in[0], 'long=', x_in[1], end='              ')
+            gis_data =  p['handler'].query(x_in[1], x_in[0]) #import_gis_data(x_in[0], x_in[1])
+        else:
+            print('GIS handler is needed!')
+            exit()
+        p['U'] = float(gis_data["current [m/s]"])
+        p['O2_in'] = float(gis_data["oxygen [mg/l]"])
+        p['salinity'] = float(gis_data["salinity [PSU]"])
+        p['temp'] = float(gis_data["temperature [°C]"])
+        p['wave_energy_period'] = float(gis_data["period [s]"])
+        #p[] = float(gis_data["power [kW/m]"])
+        p['wave_height'] = float(gis_data["height [m]"])
+        p['distance'] = float(gis_data["distance to port [m]"]) / 1000
+        #p[] = float(gis_data["distance to shore [m]"])
+        #p[] = float(gis_data["bathymetry [m]"])
+        valid_point = gis_data["ok-conditions"].bool() #and gis_data["ok-scope"].bool() #and gis_data["ok-conflicts"].bool()
+        print(valid_point)
+    else:
+        valid_point = True
+
+    #print(p['wave_height'], p['wave_energy_period'])
     ins = {**x, **p}
 
     # create objects
@@ -86,80 +143,19 @@ def input_merge(x_in, x_name, p):
 
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
               ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['temp'], 
-              ins['O2_in'], ins['U'], ins['salinity'], ins['permeability'])
+              ins['O2_in'], ins['U'], ins['salinity'], ins['permeability'], ins['pos_lat'], ins['pos_long'])
     
     fish = Fish(ins['F_f'], ins['F_p'], ins['F_c'], ins['A_f'], ins['A_p'], ins['A_c'],
                 ins['O_f'], ins['O_p'], ins['O_c'], ins['C_f'], ins['C_p'], ins['C_c'],
                 ins['P_f'], ins['P_p'], ins['tau'], ins['loss_rate'], ins['harvest_weight'], 
                 ins['O2_min'], ins['U_min'], ins['U_max'], ins['temp_min'], ins['temp_max'], 
-                ins['salinity_min'], ins['salinity_max'])
+                ins['salinity_min'], ins['salinity_max'], ins['FCR'], ins['feed_unit_cost'])
+    
+    vessel = Vessel(ins['vessel_fuel_consump_rate'], ins['vessel_fuel_cost'], 
+                ins['captain_salary'], ins['crew_salary'], ins['crew_num'], 
+                ins['time_feed'], ins['vessel_velocity'], ins['travel_number'], ins['distance'])
                 
-    return wec, wave_in, pen, fish
-
-def plot_variable(x_in, x_name, p):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p)
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out,pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    carrying_capacity = carrying_capacity_func(pen, fish)
-    P_gen_cons = wec.annual_energy - pen.power
-    fish_yield_cons = carrying_capacity - fish_yield
-    fish.plot_variable
-    return
-
-def power(wec: WEC, wave: Wave) -> float:
-    assert(isinstance(wec,WEC))
-    assert(isinstance(wave,Wave))
-    
-    return wec.P_electrical(wave)
-
-
-def P_rated(x_in, x_name, p_in: dict):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
-    wec.P_gen = power(wec, wave_in)
-    print(' '*2, "wave power  ", "{:10.3f}".format(wave_in.P_wave/1000), '[kW]')
-    return wec.P_gen/wec.capacity_factor
-    
-
-def carrying_capacity_print(x_in, x_name, p_in: dict):
-    # merge input dicts
-    wec, wave_in, pen, fish = input_merge(x_in, x_name, p_in)
-    # run each module 
-    wave_out = wave_climate(wec,wave_in)
-    fish_yield = fish_yield_func(wave_out, pen, fish)
-    wec.P_gen = power(wec, wave_in)
-    carrying_capacity = carrying_capacity_func(pen, fish)
-    
-    return pen.TPF_O2, carrying_capacity
-
-def econ(wec: WEC, pen: Pen) -> float:
-    assert(isinstance(wec,WEC))
-    assert(isinstance(pen,Pen))
-    price = wec.price + pen.price
-    return price
-
-def wave_climate(wec: WEC, wave: Wave) -> Wave:
-    assert(isinstance(wec,WEC))
-    assert(isinstance(wave,Wave))
-    Hs = wec.wave_damping * wave.Hs
-    Te = wave.Te
-    wave_out = Wave(Hs,Te)
-    return wave_out
-
-def fish_yield_func(wave: Wave, pen: Pen, fish: Fish) -> float:
-    assert(isinstance(wave,Wave))
-    assert(isinstance(pen,Pen))
-    survival_rate = (1-fish.loss_rate)
-    pen.fish_yield = pen.n * pen.SD * survival_rate * pen.volume
-    return pen.fish_yield
-
-def carrying_capacity_func(pen: Pen, fish: Fish) -> float:
-    assert(isinstance(pen,Pen))
-    assert(isinstance(fish,Fish))
-    return pen.carrying_capacity(fish)
+    return wec, wave_in, pen, fish, vessel, valid_point, gis_data
 
 
 def variable_lookup(var_category_names):
@@ -185,6 +181,13 @@ def variable_lookup(var_category_names):
         var_list.append('pen_depth')
         var_list.append('pen_unit_cost')
         var_list.append('permeability')
+        
+    if any('pos_env' in i for i in var_category_names):
+        var_list.append('pos_lat')
+        var_list.append('pos_long')
+    
+    if any('gis_handler' in i for i in var_category_names):
+        var_list.append('handler')
         
     if any('x_env' in i for i in var_category_names):
         var_list.append('temp')
@@ -228,6 +231,19 @@ def variable_lookup(var_category_names):
         var_list.append('temp_max')
         var_list.append('salinity_min')
         var_list.append('salinity_max')
+        var_list.append('FCR')             #Feed Conversion Ratio [kgFeed/kgFish]
+        var_list.append('feed_unit_cost')  #[$/kgFeed]
+    
+    if any('p_vessel' in i for i in var_category_names):
+        var_list.append('vessel_velocity')
+        var_list.append('vessel_fuel_consump_rate')
+        var_list.append('vessel_fuel_cost')
+        var_list.append('captain_salary')
+        var_list.append('crew_salary')
+        var_list.append('crew_num')
+        var_list.append('time_feed')
+        var_list.append('travel_number')
+        var_list.append('distance')
 
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
@@ -243,14 +259,14 @@ def default_values(var_category_names):
     wave_dampings = ([0, 0.13, 0.17], '[-]')            
 
     if any('x_wec' in i for i in var_category_names):
-        vals['capture_width'] = (20.73054484, '[m]')
+        vals['capture_width'] = (20, '[m]')
 
     if any('x_type_wec' in i for i in var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = (21.35566624, '[m]') 
-        vals['pen_height'] = (19.29664992, '[m]')  
+        vals['pen_diameter'] = (21.4, '[m]') 
+        vals['pen_height'] = (19.3, '[m]')  
         vals['stock_density'] = (20 , '[kg/m^3]')
    
     if any('p_pen' in i for i in var_category_names):
@@ -260,6 +276,13 @@ def default_values(var_category_names):
         vals['pen_unit_cost'] = (100, '[$/m^3]')    # 80 $/m^3 for net pen + 20 $/m^3 for mooring
         vals['permeability'] = (0.8, '[-]')      
         
+    if any('pos_env' in i for i in var_category_names):
+        vals['pos_lat'] = (42.5, 'm')  #42.203
+        vals['pos_long'] = (-70.0, 'm') #70.154
+    
+    if any('gis_handler' in i for i in var_category_names):
+        vals['handler'] = ({}, '[-]') 
+
     if any('x_env' in i for i in var_category_names):
         vals['temp'] = (10.29, 'C') 
         vals['O2_in'] = (9.5,'[mg/l]')
@@ -299,9 +322,22 @@ def default_values(var_category_names):
         vals['U_min'] = (0.01,'[m/s]')                  # From NorthEast U.S. Environment
         vals['U_max'] = (2,'[m/s]')
         vals['temp_min'] = (2,'[C]')
-        vals['temp_max'] = (28,'[C]')
+        vals['temp_max'] = (20,'[C]')
         vals['salinity_min'] = (30,'[PSU]')
         vals['salinity_max'] = (35,'[PSU]')
+        vals['FCR'] = (1.5,'[kgFeed/kgFish]')          #Feed Conversion Ratio [kgFeed/kgFish]
+        vals['feed_unit_cost'] = (1.48,'[$/kgFeed]')   #[$/kgFeed]
+    
+    if any('p_vessel' in i for i in var_category_names):
+        vals['vessel_velocity'] = (10 * 1.852,'[km/h]')  # 10 knots
+        vals['vessel_fuel_consump_rate'] = (25,'[gal/h]')
+        vals['vessel_fuel_cost'] = (4.3,'[$/gal]')
+        vals['captain_salary'] = (57,'[$/h]')
+        vals['crew_salary'] = (32,'[$/h]')
+        vals['crew_num'] = (2,'[-]')
+        vals['time_feed'] = (2,'[h]')
+        vals['travel_number'] = (52,'[-]') # once per week for a year
+        vals['distance'] = (76157.726562/1000, '[km]')
     
     #assert(fieldnames(vals) == variable_lookup(var_category_names));
     return vals
@@ -316,6 +352,10 @@ def bnds_values(var_category_names):
         bnds['pen_diameter'] = (10, 45)      #[m]  
         bnds['pen_height'] = (10, 30)        #[m]  
         bnds['stock_density'] = (10, 20)     #[kg/m^3]
+    
+    if any('pos_env' in i for i in var_category_names):
+        bnds['pos_lat'] = (40, 44)        #[m]
+        bnds['pos_long'] = (-72, -68)         #[m]
     
     if any('x_env' in i for i in var_category_names):
         bnds['temp'] = (1, 50)              #[C] 

@@ -20,13 +20,14 @@ class WEC:
         self.unit_cost = unit_cost
         self.capacity_factor = capacity_factor
         self.eta = eta
+        self.beta_wec = 0.95 * 0.98 
         
         self.P_gen = []
         
     @property
     def annual_energy(self) -> float:
-        beta_wec = 0.95 * 0.98                      #For RM3 (device availability * transmission efficiency)
-        AEP = self.P_gen * 0.001 * 8766 * beta_wec  #Annual Energy Production [kWh]
+                             #For RM3 (device availability * transmission efficiency)
+        AEP = self.P_gen * 0.001 * 8766 * self.beta_wec  #Annual Energy Production [kWh]
         return AEP
 
     @property
@@ -51,6 +52,17 @@ class WEC:
     def P_electrical(self, wave):
         P_electrical = self.eta * self.P_mechanical(wave.P_wave)
         return P_electrical
+    
+    def set_capture_width(self, pen, wave):
+        P_electrical = pen.power / (0.001 * 8766 * self.beta_wec)
+        P_mechanical = P_electrical / self.eta 
+        return P_mechanical / (wave.P_wave * self.capture_width_ratio)
+
+    
+    @property
+    def P_rated(self):
+        P_rated = self.P_gen / self.capacity_factor
+        return P_rated
 
 class Wave:
     def __init__(self, Hs: float, Te: float) -> None:
@@ -71,7 +83,7 @@ class Fish:
                  O_f, O_p, O_c, C_f, C_p, C_c, 
                  P_f, P_p, tau, loss_rate, harvest_weight, 
                  O2_min, U_min, U_max, temp_min, temp_max, 
-                 salinity_min, salinity_max) :
+                 salinity_min, salinity_max, FCR, feed_unit_cost) :
                
         self.F_f = F_f
         self.F_p = F_p
@@ -102,6 +114,9 @@ class Fish:
         self.temp_max = temp_max
         self.salinity_min = salinity_min
         self.salinity_max = salinity_max
+
+        self.FCR = FCR
+        self.feed_unit_cost = feed_unit_cost
         
         self.time_i = []
         self.W_i = []
@@ -192,7 +207,6 @@ class Fish:
         OCR = sum(self.DO2_i[W_i_50g:W_i_1kg])              
         return OCR
 
-    @property
     def plot_variable(self):
         fig, ax = plt.subplots(3,1, figsize=(12, 8))
         ax1 = plt.subplot(3,1,1)
@@ -253,7 +267,7 @@ class Fish:
 class Pen:
     def __init__(self, D: float, H: float, Depth: float, SD: float, n: float, spacing: float, 
                  unit_cost: float, temp: float, O2_in: float, U: float, salinity: float,
-                 permeability: float) -> None:
+                 permeability: float, pos_lat, pos_long):
         self.D = D 
         self.H = H
         self.Depth = Depth
@@ -267,6 +281,9 @@ class Pen:
         self.U = U
         self.salinity = salinity
         self.permeability = permeability
+
+        self.pos_lat = pos_lat
+        self.pos_long = pos_long
         
         self.TPF_O2 = 0
         
@@ -284,6 +301,11 @@ class Pen:
     def power(self) -> float:
         power = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
         return power
+    
+    @property
+    def biomass(self) -> float:
+        biomass = self.n * self.SD * self.volume  # [kg]
+        return biomass
 
     
     def carrying_capacity(self, fish) -> float:
@@ -298,4 +320,24 @@ class Pen:
         
         return carrying_capacity
 
-    
+class Vessel:
+    def __init__(self, fuel_consump_rate, fuel_cost, 
+                 captain_salary, crew_salary, crew_num, 
+                 t_feed, velocity, number_travel, distance):
+        self.fuel_consump_rate = fuel_consump_rate
+        self.fuel_cost = fuel_cost
+        self.captain_salary = captain_salary
+        self.crew_salary = crew_salary
+        self.crew_num = crew_num
+        self.t_feed = t_feed
+        self.velocity = velocity
+        self.number_travel = number_travel
+        self.distance = distance
+        self.t_travel = 2 * self.distance / self.velocity  # back and forth travel between port and deployment location
+
+    @property 
+    def price(self):
+        fuel_price = self.t_travel * self.fuel_cost * self.fuel_cost
+        laber_salary = (self.t_travel + self.t_feed) * (self.captain_salary + self.crew_num * self.crew_salary)
+        price = self.number_travel  * (fuel_price + laber_salary) # annual price
+        return price
