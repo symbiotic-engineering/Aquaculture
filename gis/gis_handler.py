@@ -41,14 +41,12 @@ class GISHandler:
             return self.points.loc[(self.points.x==x) & (self.points.y==y)]
         
         point = Point(x, y)
-        conditions = {'x': x, 'y': y, 'geometry': point, 'ok-conditions': True, 'ok-scope': True, 'ok-conflicts': True}
+        conditions = {'x': x, 'y': y, 'geometry': point, 'ok-conditions': True, 'ok-scope': False, 'ok-conflicts': True}
         
         # check if point is offshore in desired scope
         for polygon in self.scope['geometry']:
             if point.intersects(polygon):
                 conditions['ok-scope'] = True
-            else:
-                conditions['ok-scope'] = False
         
         # check if point intersects with any of the conflicts loaded as vectors
         for key, vector in self.conflicts.items():
