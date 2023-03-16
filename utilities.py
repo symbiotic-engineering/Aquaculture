@@ -8,15 +8,18 @@ def print_bold(str):
 
 def print_objective(title, aqua_obj):
     print_bold(title+" objective function terms:")
-    print(' '*2, "cost_per_yield", "{:10.3f}".format(aqua_obj.cost_per_yield), '[$/kg]')
-    print(' '*2, "price         ", "{:10.3f}".format(aqua_obj.price), '[$]')
+    print(' '*2, "Objective_func", "{:10.3f}".format(aqua_obj.obj_func))
+    #print(' '*2, "cost_per_yield", "{:10.3f}".format(aqua_obj.cost_per_yield), '[$/kg]')
+    #print(' '*2, "price         ", "{:10.3f}".format(aqua_obj.price), '[$]')
     print(' '*2, "fish_yield    ", "{:10.3f}".format(aqua_obj.pen.fish_yield), '[kg]')
     print("-"*40)
 
 def print_P_rated(title, aqua_obj):
-    print_bold(title+" WEC rated power:")
-    print(' '*2, "wave power  ", "{:10.3f}".format(aqua_obj.wave_in.P_wave/1000), '[kW]')
-    print(' '*2, "P_rated     ", "{:10.3f}".format(aqua_obj.wec.P_rated/1000), '[kW]')
+    print_bold(title+" wave energy converter:")
+    print(' '*2, "wec number    ", "{:10.3f}".format(aqua_obj.wec.wec_number), '[-]')
+    print(' '*2, "wave power    ", "{:10.3f}".format(aqua_obj.wave_in.P_wave/1000), '[kW/m]')
+    print(' '*2, "wec_P_ave     ", "{:10.3f}".format(aqua_obj.wec.P_ave), '[kW]')
+    print(' '*2, "wec AEP       ", "{:10.3f}".format(aqua_obj.wec.AEP), '[kWh]')
     print("-"*40)
 
 def print_carrying_capacity(title, aqua_obj):
@@ -42,10 +45,10 @@ def print_ineq_cons(title,aqua_obj):
     print("-"*40)
 
 def print_point_validation(title,aqua_obj):
-    print_bold(title+" point validation:")
-    print(' '*2, "conditions          ", aqua_obj.gis_data["ok-conditions"].bool(), '[-]')
-    print(' '*2, "scope               ", aqua_obj.gis_data["ok-scope"].bool(), '[-]')
-    print(' '*2, "conflicts           ", aqua_obj.gis_data["ok-conflicts"].bool(), '[-]')
+    print_bold(title+" location validation:")
+    print(' '*2, "conditions          ", aqua_obj.gis_data["ok-conditions"].bool())
+    print(' '*2, "scope               ", aqua_obj.gis_data["ok-scope"].bool())
+    print(' '*2, "conflicts           ", aqua_obj.gis_data["ok-conflicts"].bool())
     
             
 def init_result(x0_init, x_name, p_init):
@@ -83,21 +86,24 @@ def optimize_result(x_name, x_list, x_unit, res_opt, p):
         print('invalid optimized point')
     print('+'*40) 
 
-def bruteforce_result(x_name, x_list, x_unit, res_opt, p):
-    if (res_opt.valid_point):
-        col_width = len(max(x_list, key=len))
-        
-        print_bold("brute force design variable:")
-        for i in range(len(x_list)):
-            print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(res_opt.x0[i]), x_unit[i])
-        print("-"*40)
-        
-        print_objective("brute force",res_opt)
-        print_P_rated("brute force",res_opt)
-        print_price_breakdown("brute force",res_opt)
-        print_ineq_cons("brute force",res_opt)
-        print_carrying_capacity("brute force",res_opt)
-        print_point_validation("brute force",res_opt)
-    else:
+def bruteforce_result(title, x_best, res_opt, p):
+    print('+'*80) 
+    print_bold("brute force " + title)
+    print('+'*80) 
+    if x_best == None:
         print('invalid optimized point')
-    print('+'*40) 
+    else:
+        if (res_opt.valid_point):
+            col_width = len(max(x_best.list, key=len))
+            
+            print_bold("design variable:")
+            for i in range(len(x_best.list)):
+                print(' '*2, x_best.list[i], ' '*(col_width - len(x_best.list[i])) , "{:10.3f}".format(res_opt.x0[i]), x_best.unit[i])
+            print("-"*40)
+            
+            print_objective("",res_opt)
+            print_P_rated("",res_opt)
+            print_price_breakdown("",res_opt)
+            print_point_validation("",res_opt)
+        else:
+            print('invalid optimized point')

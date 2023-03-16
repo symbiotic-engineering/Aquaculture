@@ -9,31 +9,48 @@ class WEC:
                 capture_width_ratio_dict: Dict[str,float], 
                 wave_damping_dict: Dict[str,float], 
                 wec_type: str,
-                unit_cost: float,
-                capacity_factor: float,
-                eta: float) -> None:
+                capacity_factor,
+                eta, float_diameter) -> None:
         
         self.capture_width = capture_width
         self.capture_width_ratio_dict = capture_width_ratio_dict
         self.wave_damping_dict = wave_damping_dict
         self.wec_type = wec_type
-        self.unit_cost = unit_cost
         self.capacity_factor = capacity_factor
         self.eta = eta
-        self.beta_wec = 0.95 * 0.98 
-        
+        self.beta_wec = 0.95 * 0.98  #For RM3 (device availability * transmission efficiency)
+        self.float_diameter = float_diameter
+
         self.P_gen = []
         
     @property
-    def annual_energy(self) -> float:
-                             #For RM3 (device availability * transmission efficiency)
+    def AEP(self): # annual energy production for an array of WECs
         AEP = self.P_gen * 0.001 * 8766 * self.beta_wec  #Annual Energy Production [kWh]
         return AEP
 
     @property
-    def price(self) -> float:
-        price = self.annual_energy * self.unit_cost
+    def P_ave(self):
+        return self.AEP / 8766 / self.wec_number  #[kW]
+    
+    @property
+    def price(self):
+        price = self.AEP * self.LCOE
         return price
+
+    @property
+    def LCOE_base_RM3(self):
+        return 0.75 * 1.19   #'[$/kWh]'  # 0.75 [$/kWh] for 100 wecs     inflation rate from 2014 to 2022 = 1.19   
+        #array_scale = [1, 10, 50, 100]
+        #LCOE_array_scale = np.array([4.50, 1.45, 0.85, 0.75]) * 1.19 #'[$/kWh]'  # inflation rate from 2014 to 2022 = 1.19                                                                           
+        #return np.interp(self.wec_number, array_scale, LCOE_array_scale)
+    
+    @property
+    def LCOE(self):
+        return self.LCOE_base_RM3 * (700*1000) / self.AEP_per_unit #  AEP_per_unit for base RM3 = 700 MWh
+    
+    @property
+    def AEP_per_unit(self): # average annual energy production per unit of RM3
+        return self.AEP / self.wec_number
 
     @property
     def wave_damping(self) -> float:
@@ -46,7 +63,7 @@ class WEC:
         return capture_width_ratio
     
     def P_mechanical(self, wave_power):
-        P_mechanical = wave_power * self.capture_width * self.capture_width_ratio
+        P_mechanical = wave_power * self.capture_width
         return P_mechanical 
     
     def P_electrical(self, wave):
@@ -56,13 +73,19 @@ class WEC:
     def set_capture_width(self, pen, wave):
         P_electrical = pen.power / (0.001 * 8766 * self.beta_wec)
         P_mechanical = P_electrical / self.eta 
-        return P_mechanical / (wave.P_wave * self.capture_width_ratio)
+        return P_mechanical / wave.P_wave
 
-    
+    @property
+    def wec_number(self):
+        number = self.capture_width / self.float_diameter / self.capture_width_ratio
+        return np.ceil(number)
+
+    '''
     @property
     def P_rated(self):
         P_rated = self.P_gen / self.capacity_factor
         return P_rated
+    '''
 
 class Wave:
     def __init__(self, Hs: float, Te: float) -> None:
@@ -203,8 +226,12 @@ class Fish:
         self.DO2_i = DO2_i
         
         W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)   # index of weight fish = 50 g
-        W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000) # index of weight fish = 1 kg
-        OCR = sum(self.DO2_i[W_i_50g:W_i_1kg])              
+        try:
+            W_i_1kg = next(x[0] for x in enumerate(self.W_i) if x[1] > 1000) # index of weight fish = 1 kg
+            OCR = sum(self.DO2_i[W_i_50g:W_i_1kg])
+        except:
+            OCR = sum(self.DO2_i[W_i_50g:]) / self.W_i[-1] * 1000
+
         return OCR
 
     def plot_variable(self):
@@ -265,9 +292,9 @@ class Fish:
         plt.show()
         
 class Pen:
-    def __init__(self, D: float, H: float, Depth: float, SD: float, n: float, spacing: float, 
-                 unit_cost: float, temp: float, O2_in: float, U: float, salinity: float,
-                 permeability: float, pos_lat, pos_long):
+    def __init__(self, D, H, Depth, SD, n, spacing, 
+                 unit_cost, temp, O2_in, U, salinity, permeability, bathymetry,
+                 pos_lat, pos_long):
         self.D = D 
         self.H = H
         self.Depth = Depth
@@ -275,12 +302,18 @@ class Pen:
         self.n = n 
         self.spacing = spacing
 
+        self.fish_yield = []
+
         self.unit_cost = unit_cost
         self.temp = temp
         self.O2_in = O2_in
         self.U = U
         self.salinity = salinity
         self.permeability = permeability
+        
+        self.bathymetry = bathymetry
+        self.waterdepth_underpen_min = 20
+        self.waterdepth_underpen_max = 75
 
         self.pos_lat = pos_lat
         self.pos_long = pos_long
@@ -314,7 +347,7 @@ class Pen:
                     
         OT = (self.O2_in - fish.O2_min) * length * self.H * self.permeability * fish.U_min # [g_O2 / s]
         self.TPF_O2 = (OT * 3600 * 24 * 365) / fish.DO2(self.temp)  # [kg-fish / year]
-        
+
         carrying_capacity = (OT * 3600 * 24) / fish.DO2_i[-1] 
         self.carrying_capacity_value = carrying_capacity
         
