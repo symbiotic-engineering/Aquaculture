@@ -30,10 +30,10 @@ def print_carrying_capacity(title, aqua_obj):
 
 def print_price_breakdown(title, aqua_obj):
     print_bold(title+" price break down:")
-    print(' '*2, "wec price           ", "{:10.3f}".format(aqua_obj.wec.price), '[$]')
+    print(' '*2, "wec NPV             ", "{:10.3f}".format(aqua_obj.wec.cost_NPV), '[$]')
     print(' '*2, "pen price           ", "{:10.3f}".format(aqua_obj.pen.price), '[$]')
     print(' '*2, "fish feed price     ", "{:10.3f}".format(aqua_obj.fish_feed_price), '[$]')
-    print(' '*2, "vessel travel price ", "{:10.3f}".format(aqua_obj.vessel.price), '[$]')
+    print(' '*2, "vessel travel NPV   ", "{:10.3f}".format(aqua_obj.vessel.cost_NPV), '[$]')
     print("-"*40)
     
 def print_ineq_cons(title,aqua_obj):

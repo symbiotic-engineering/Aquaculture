@@ -20,8 +20,8 @@ class GeoData():
                 'valid_point': gis_data["ok-conditions"].bool() and gis_data["ok-scope"].bool() and gis_data["ok-conflicts"].bool()}
         if valid_point:
             data['obj_func'] = aqua_obj.obj_func
-            data['vessel_travel_price [$]'] =  aqua_obj.vessel.price
-            data['wec_price [$]'] = aqua_obj.wec.price
+            data['vessel_travel_cost_NPV [$]'] =  aqua_obj.vessel.cost_NPV
+            data['wec_cost_NPV [$]'] = aqua_obj.wec.cost_NPV
             data['fish_yield [kg]'] = aqua_obj.pen.fish_yield
             data['cost_per_yield [$/kg]'] = aqua_obj.cost_per_yield
             data['wec_number [-]'] = aqua_obj.wec.wec_number

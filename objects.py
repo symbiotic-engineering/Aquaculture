@@ -10,7 +10,9 @@ class WEC:
                 wave_damping_dict: Dict[str,float], 
                 wec_type: str,
                 capacity_factor,
-                eta, float_diameter) -> None:
+                eta, float_diameter,
+                CapEx_ref, OpEx_ref,
+                lifetime, discount_rate):
         
         self.capture_width = capture_width
         self.capture_width_ratio_dict = capture_width_ratio_dict
@@ -20,6 +22,10 @@ class WEC:
         self.eta = eta
         self.beta_wec = 0.95 * 0.98  #For RM3 (device availability * transmission efficiency)
         self.float_diameter = float_diameter
+        self.CapEx_ref = CapEx_ref
+        self.OpEx_ref = OpEx_ref
+        self.lifetime = lifetime
+        self.discount_rate = discount_rate
 
         self.P_gen = []
         
@@ -36,6 +42,23 @@ class WEC:
     def price(self):
         price = self.AEP * self.LCOE
         return price
+    
+    @property
+    def CapEx(self):
+        CapEx = self.wec_number * self.CapEx_ref  # capital expense for array
+        return CapEx
+    
+    @property
+    def OpEx(self):
+        OpEx = self.wec_number * self.OpEx_ref  # capital expense for array
+        return OpEx
+    
+    @property
+    def cost_NPV(self): #net present value
+        cost_NPV = self.CapEx
+        for i in range(self.lifetime):
+            cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
+        return cost_NPV
 
     @property
     def LCOE_base_RM3(self):
@@ -356,7 +379,8 @@ class Pen:
 class Vessel:
     def __init__(self, fuel_consump_rate, fuel_cost, 
                  captain_salary, crew_salary, crew_num, 
-                 t_feed, velocity, number_travel, distance):
+                 t_feed, velocity, number_travel, distance,
+                 lifetime, discount_rate):
         self.fuel_consump_rate = fuel_consump_rate
         self.fuel_cost = fuel_cost
         self.captain_salary = captain_salary
@@ -367,10 +391,19 @@ class Vessel:
         self.number_travel = number_travel
         self.distance = distance
         self.t_travel = 2 * self.distance / self.velocity  # back and forth travel between port and deployment location
+        self.lifetime = lifetime
+        self.discount_rate = discount_rate
 
     @property 
-    def price(self):
+    def OpEx(self):
         fuel_price = self.t_travel * self.fuel_cost * self.fuel_cost
-        laber_salary = (self.t_travel + self.t_feed) * (self.captain_salary + self.crew_num * self.crew_salary)
-        price = self.number_travel  * (fuel_price + laber_salary) # annual price
-        return price
+        laber_salary = (self.t_travel) * (self.captain_salary + self.crew_num * self.crew_salary)
+        OpEx = self.number_travel  * (fuel_price + laber_salary) # annual price
+        return OpEx
+    
+    @property
+    def cost_NPV(self): #net present value
+        cost_NPV = 0
+        for i in range(self.lifetime):
+            cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
+        return cost_NPV
