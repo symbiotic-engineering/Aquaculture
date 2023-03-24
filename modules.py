@@ -29,7 +29,7 @@ def eq_constraint(x_in, x_name, p_in: dict):
 def obj_terms(x_in, x_name, p_in: dict):
     aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
     if aqua_obj.valid_point: 
-        return np.array([aqua_obj.price, aqua_obj.pen.fish_yield, aqua_obj.pen.price, aqua_obj.wec.price])
+        return np.array([aqua_obj.cost_NPV, aqua_obj.pen.fish_yield, aqua_obj.pen.price, aqua_obj.wec.price])
     else:
         return np.array([-1, -1, -1, -1])
 
@@ -52,7 +52,7 @@ class Aqua_Obj(object):
             #print('    ', self.vessel.price, self.wec.price, self.wec.LCOE, self.wec.LCOE_base_RM3, self.wec.AEP_per_unit, self.wec.AEP, self.wec.capture_width, self.wec.wec_number,self.pen.power, self.wave_in.P_wave)
 
             self.carrying_capacity = self.pen.carrying_capacity(self.fish)
-            self.cost_per_yield = self.price/self.pen.fish_yield 
+            self.cost_per_yield = self.cost_NPV/self.pen.fish_yield 
 
             # power supply constraint to ensure supply power demand of net pen
             #self.P_gen_cons = (self.wec.AEP - self.pen.power) / self.wec.AEP
@@ -76,7 +76,7 @@ class Aqua_Obj(object):
         
     @property
     def obj_func(self):
-        return self.wec.price + self.vessel.price  # self.cost_per_yield
+        return self.cost_NPV
     
     @property
     def ineq_constraint(self):
@@ -86,9 +86,14 @@ class Aqua_Obj(object):
                 self.env_O2_min_cons, self.env_bathymetry_min_cons, self.env_bathymetry_max_cons]
 
     @property
-    def price(self):
-        price = self.wec.price + self.pen.price + self.vessel.price + self.fish_feed_price
-        return price
+    def cost_NPV(self): #net present value
+        cost_NPV = self.wec.cost_NPV + self.vessel.cost_NPV
+        return cost_NPV
+    
+   # @property
+   # def price(self):
+   #     price = self.wec.price + self.pen.price + self.vessel.price + self.fish_feed_price
+   #     return price
     
     def fish_yield_func(self):
         survival_rate = (1-self.fish.loss_rate) 
@@ -147,7 +152,8 @@ def input_merge(x_in, x_name, p):
     
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
             ins['wave_damping_dict'], ins['wec_type'],
-            ins['capacity_factor'], ins['eta'], ins['float_diameter'])
+            ins['capacity_factor'], ins['eta'], ins['float_diameter'],
+            ins['CapEx_ref'], ins['OpEx_ref'], ins['lifetime'], ins['discount_rate'])
 
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
               ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['temp'], 
@@ -162,7 +168,8 @@ def input_merge(x_in, x_name, p):
     
     vessel = Vessel(ins['vessel_fuel_consump_rate'], ins['vessel_fuel_cost'], 
                 ins['captain_salary'], ins['crew_salary'], ins['crew_num'], 
-                ins['time_feed'], ins['vessel_velocity'], ins['travel_number'], ins['distance'])
+                ins['time_feed'], ins['vessel_velocity'], ins['travel_number'], ins['distance'],
+                ins['lifetime'], ins['discount_rate'])
                 
     return wec, wave_in, pen, fish, vessel, valid_point, gis_data
 
@@ -215,6 +222,10 @@ def variable_lookup(var_category_names):
         var_list.append('eta')
         var_list.append('capacity_factor')
         var_list.append('float_diameter')
+        var_list.append('CapEx_ref')
+        var_list.append('OpEx_ref')
+        var_list.append('lifetime')
+        var_list.append('discount_rate')
     
     if any('p_fish' in i for i in var_category_names):
         var_list.append('F_f')             #Fraction of Fat in the Feed Mix [-]
@@ -310,6 +321,10 @@ def default_values(var_category_names):
         vals['eta'] = (0.8,'[-]') 
         vals['capacity_factor'] = (0.3,'[-]') 
         vals['float_diameter'] = (20, '[m]')
+        vals['CapEx_ref'] = (4833448, '[$]')
+        vals['OpEx_ref'] = (116050, '[$]')
+        vals['lifetime'] = (20, '[year]')
+        vals['discount_rate'] = (0.07, '[-]')
         
     if any('p_fish_salmon' in i for i in var_category_names):
         vals['F_f'] = (0.15, '[-]')                     #Fraction of Fat in the Feed Mix [-]
