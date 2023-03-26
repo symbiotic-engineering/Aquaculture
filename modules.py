@@ -286,8 +286,8 @@ def default_values(var_category_names):
         vals['wec_type'] = ('point absorber', '[-]')
         
     if any('x_pen' in i for i in var_category_names):
-        vals['pen_diameter'] = (21.4, '[m]') 
-        vals['pen_height'] = (19.3, '[m]')  
+        vals['pen_diameter'] = (30, '[m]') 
+        vals['pen_height'] = (15, '[m]')  
         vals['stock_density'] = (20 , '[kg/m^3]')
    
     if any('p_pen' in i for i in var_category_names):
