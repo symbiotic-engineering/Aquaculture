@@ -49,20 +49,11 @@ class Aqua_Obj(object):
 
             self.wec.P_gen = self.power()
 
-            #print('    ', self.vessel.price, self.wec.price, self.wec.LCOE, self.wec.LCOE_base_RM3, self.wec.AEP_per_unit, self.wec.AEP, self.wec.capture_width, self.wec.wec_number,self.pen.power, self.wave_in.P_wave)
-
             self.carrying_capacity = self.pen.carrying_capacity(self.fish)
             self.cost_per_yield = self.cost_NPV/self.pen.fish_yield 
 
-            # power supply constraint to ensure supply power demand of net pen
-            #self.P_gen_cons = (self.wec.AEP - self.pen.power) / self.wec.AEP
-
             # fish yield constraint to ensure a healthy offshore environment
             self.fish_yield_cons = self.carrying_capacity - self.pen.fish_yield
-        
-            # net pen geometry constraint to present a practical design and ratio between diameter and height
-            #self.pen_ratio_low_cons = (self.pen.D - self.pen.H) / self.pen.D
-            #self.pen_ratio_up_cons = (3*self.pen.H - self.pen.D) / (3*self.pen.H)
 
             self.env_Umin_cons = self.pen.U - self.fish.U_min
             self.env_Umax_cons = self.fish.U_max - self.pen.U
@@ -89,11 +80,6 @@ class Aqua_Obj(object):
     def cost_NPV(self): #net present value
         cost_NPV = self.wec.cost_NPV + self.vessel.cost_NPV
         return cost_NPV
-    
-   # @property
-   # def price(self):
-   #     price = self.wec.price + self.pen.price + self.vessel.price + self.fish_feed_price
-   #     return price
     
     def fish_yield_func(self):
         survival_rate = (1-self.fish.loss_rate) 
@@ -125,7 +111,6 @@ def input_merge(x_in, x_name, p):
     gis_data = []
     if 'pos_env' in x_name:
         if 'handler' in p:
-            #print('lat=', x_in[0], 'long=', x_in[1], end='              ')
             gis_data =  p['handler'].query(x_in[1], x_in[0]) #import_gis_data(x_in[0], x_in[1])
         else:
             print('GIS handler is needed!')
@@ -138,13 +123,10 @@ def input_merge(x_in, x_name, p):
         p['wave_energy_period'] = float(gis_data["period [s]"])
         p['wave_height'] = float(gis_data["height [m]"])
         p['distance'] = float(gis_data["distance to port [m]"]) / 1000
-        #p[] = float(gis_data["distance to shore [m]"])
         valid_point = gis_data["ok-conditions"].bool() and gis_data["ok-scope"].bool() #and gis_data["ok-conflicts"].bool()
-        #print(valid_point)
     else:
         valid_point = True
 
-    #print(p['wave_height'], p['wave_energy_period'])
     ins = {**x, **p}
 
     # create objects
@@ -298,8 +280,8 @@ def default_values(var_category_names):
         vals['permeability'] = (0.8, '[-]')      
         
     if any('pos_env' in i for i in var_category_names):
-        vals['pos_lat'] = (42.0, 'm')  #42.203
-        vals['pos_long'] = (-70.0, 'm') #70.154
+        vals['pos_lat'] = (42.0, 'm')  
+        vals['pos_long'] = (-70.0, 'm') 
     
     if any('gis_handler' in i for i in var_category_names):
         vals['handler'] = ({}, '[-]') 
@@ -381,7 +363,7 @@ def bnds_values(var_category_names):
     
     if any('pos_env' in i for i in var_category_names):
         bnds['pos_lat'] = (38.4, 45.2)        #[m]
-        bnds['pos_long'] = (-75.8, -65.7)         #[m]
+        bnds['pos_long'] = (-75.8, -65.7)     #[m]
     
     if any('x_env' in i for i in var_category_names):
         bnds['temp'] = (1, 50)              #[C] 
