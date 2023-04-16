@@ -5,7 +5,7 @@ import math
 def obj(x_in, x_name, p_in: dict):
     aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
     if aqua_obj.valid_point:
-        return aqua_obj.obj_func #aqua_obj.cost_per_yield
+        return aqua_obj.obj_func 
     else:
         return aqua_obj.obj_func + 30000
 

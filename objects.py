@@ -63,9 +63,6 @@ class WEC:
     @property
     def LCOE_base_RM3(self):
         return 0.75 * 1.19   #'[$/kWh]'  # 0.75 [$/kWh] for 100 wecs     inflation rate from 2014 to 2022 = 1.19   
-        #array_scale = [1, 10, 50, 100]
-        #LCOE_array_scale = np.array([4.50, 1.45, 0.85, 0.75]) * 1.19 #'[$/kWh]'  # inflation rate from 2014 to 2022 = 1.19                                                                           
-        #return np.interp(self.wec_number, array_scale, LCOE_array_scale)
     
     @property
     def LCOE(self):
@@ -121,7 +118,6 @@ class Wave:
     def P_wave(self) -> float:
         #P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (32 * pi)  #for regular wave
         P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (64 * pi) #for irregular wave
-        #P_wave = 7000
         return P_wave
 
 class Fish:
