@@ -50,7 +50,7 @@ class WEC:
     
     @property
     def OpEx(self):
-        OpEx = self.wec_number * self.OpEx_ref  # capital expense for array
+        OpEx = self.wec_number * self.OpEx_ref  # operational  expense for array
         return OpEx
     
     @property
@@ -361,8 +361,7 @@ class Pen:
 
     
     def carrying_capacity(self, fish) -> float:
-        length = self.n * self.D  
-        #length = self.n * self.D + self.spacing * (self.n-1) # From reference paper (Stigebrandt'1999, MOM (Monitoring-Ongrowing fish farms-Modelling)) for a row farm
+        length = self.n * self.D
                     
         OT = (self.O2_in - fish.O2_min) * length * self.H * self.permeability * fish.U_min # [g_O2 / s]
         self.TPF_O2 = (OT * 3600 * 24 * 365) / fish.DO2(self.temp)  # [kg-fish / year]

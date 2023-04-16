@@ -9,8 +9,6 @@ def print_bold(str):
 def print_objective(title, aqua_obj):
     print_bold(title+" objective function terms:")
     print(' '*2, "Objective_func", "{:10.3f}".format(aqua_obj.obj_func))
-    #print(' '*2, "cost_per_yield", "{:10.3f}".format(aqua_obj.cost_per_yield), '[$/kg]')
-    #print(' '*2, "price         ", "{:10.3f}".format(aqua_obj.price), '[$]')
     print(' '*2, "fish_yield    ", "{:10.3f}".format(aqua_obj.pen.fish_yield), '[kg]')
     print("-"*40)
 
