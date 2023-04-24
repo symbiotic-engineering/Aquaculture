@@ -1,3 +1,7 @@
+# Python GIS Handler
+# SEA Lab at Cornell University, last updated: 4/24/23
+
+# import necessary packages, namely geopandas and rasterio
 import geopandas as gpd
 import rasterio
 from shapely.geometry import Point
@@ -6,38 +10,43 @@ from shapely.errors import ShapelyDeprecationWarning
 
 # ignore shapely 1.8 deprecation warnings
 warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
-precision = 5 # precision of input coordinates, 5dec~=1.1m
+precision = 5 # precision of input coordinates to prevent duplicate calls, 5dec~1.1m
 
 class GISHandler:
-    """A class to handle GIS raster data and optimizer points."""
+    """A class to handle GIS data and optimizer points."""
         
     def __init__(self, conditions, conflicts, scope):
         """Initializes handler by creating a GeoDataFrame to store point measurement data and a dictionary of loaded raster files."""
         self.conditions = {}
         self.conflicts = {}
         self.scope = gpd.read_file(scope)
+        # create initial geodataframe with anticipated fields
         self.points = gpd.GeoDataFrame(columns=['x', 'y', 'geometry', 'result', 'ok-conditions', 'ok-scope', 'ok-conflicts'], geometry='geometry')
     
+        # check if raster already loaded as a condition, otherwise read source
         for key, src in conditions.items():
             if key in self.conditions:
                 print('raster {} already loaded!'.format(key))
             else:
                 self.conditions[key] = rasterio.open(src)
-                
+        
+        # check if vector already loaded as a conflict, otherwise read source
         for key, src in conflicts.items():
             if key in self.conflicts:
                 print('vector {} already loaded!'.format(key))
             else:
                 self.conflicts[key] = gpd.read_file(src)
                 
+        # calculate boundaries of loaded files
         self.extent = self.extent()
     
     def query(self, x, y):
         """Gets condition data for a specified geography location (lon/lat), stores it in the GeoDataFrame, and returns the row."""
         x, y = self.coordinate(x, y)
-                                    
+                                
+        # check if point has already been queried
         if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
-           # print('point exists, returning original data')
+            print('point exists, returning original data')
             return self.points.loc[(self.points.x==x) & (self.points.y==y)]
         
         point = Point(x, y)
@@ -80,6 +89,7 @@ class GISHandler:
         return self.points.iloc[-1:]
     
     def query_grid(self, x_min, x_max, y_min, y_max, xy_delta):
+        """Iteratively builds a grid of points with desired bounds and resolution for brute-force analysis."""
         self.grid = gpd.GeoDataFrame(columns=['x', 'y', 'geometry', 'result', 'ok-conditions', 'ok-scope', 'ok-conflicts'], geometry='geometry')
         
         x = x_min
@@ -92,17 +102,19 @@ class GISHandler:
             x += xy_delta
     
     def save(self, name):
+        """Saves all loaded points and values into GIS format."""
         self.points.to_file(name, driver='GeoJSON')
         
     def load(self, name):
+        """Loads previously saved points from GIS file."""
         self.points = gpd.read_file(name)
         
     def coordinate(self, x, y):
-        """Rounds coordinates to given precision to prevent uneccessary duplication, in the future could handle projections."""
+        """Rounds coordinates to given precision to prevent uneccessary duplication. In the future could handle projections."""
         return round(x, precision), round(y, precision)
     
     def extent(self):
-        """Calculates largest square extent that includes data from all loaded rasters."""
+        """Calculates largest rectangular extent that includes data from all loaded rasters."""
         
         extent = [-180, 180, -90, 90] # format: [W, E, S, N]
         for src in self.conditions.values():
