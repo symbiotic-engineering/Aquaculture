@@ -8,7 +8,9 @@ This repository consists of the following files:
 - optimization: scripts and functions to perform a single objective optimization using brute-force.
 - env_bruteforce: script to perform brute-force for defined net pen parmeters.
 - run_sim_env: top-level script to perform the "marine spatial planning" optimization code using default values for defined environment with rasters and vectors of data.
-- Gabe ???
+- gis/gis_handler: object to handle connection between GIS data and Python functions
+- gis/gis_example: examples of how to use the GIS handler to query and save data
+- gis/data: GIS files used in analysis including conflicts (.geojson) and conditions (.tif)
 - requirements.txt: list of the required libraries.
 
 ## How to use
