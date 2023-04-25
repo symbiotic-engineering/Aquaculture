@@ -34,4 +34,4 @@ The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab 
 This material is based upon work supported by the Sea Grant Regional Research Project No.: R/ATD-18-NESG.
 
 ## License
-This project is released open-source under the MIT License. 
+This project is released open-source under the MIT License. Processed GIS data included in the repository is from publicly available sources, but may have different license terms.
