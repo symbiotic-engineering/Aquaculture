@@ -3,6 +3,22 @@ from typing import Dict
 import numpy as np
 from scipy.integrate import quad
 from matplotlib import pyplot as plt
+from numba import njit
+
+@njit
+def cumsum_with_limits_nb(values, uplimit):
+    n = len(values)
+    res = np.empty(n)
+    sum_val = 0
+    for i in range(n):
+        x = values[i] + sum_val
+        if (x <= uplimit):
+            res[i] = x
+            sum_val = x
+        else:
+            res[i] = uplimit
+            sum_val = uplimit
+    return res
 
 class WEC:
     def __init__(self, capture_width: Dict[str,float], 
@@ -31,7 +47,7 @@ class WEC:
         
     @property
     def AEP(self): # annual energy production for an array of WECs
-        AEP = self.P_gen * 0.001 * 8766 * self.beta_wec  #Annual Energy Production [kWh]
+        AEP = np.sum(self.P_gen)  #Annual Energy Production [kWh]
         return AEP
 
     @property
@@ -83,21 +99,16 @@ class WEC:
         return capture_width_ratio
     
     def P_mechanical(self, wave_power):
-        P_mechanical = wave_power * self.capture_width
+        P_mechanical = wave_power * self.capture_width * self.beta_wec
         return P_mechanical 
     
     def P_electrical(self, wave):
         P_electrical = self.eta * self.P_mechanical(wave.P_wave)
         return P_electrical
-    
-    def set_capture_width(self, pen, wave):
-        P_electrical = pen.power / (0.001 * 8766 * self.beta_wec)
-        P_mechanical = P_electrical / self.eta 
-        return P_mechanical / wave.P_wave
 
     @property
     def wec_number(self):
-        number = self.capture_width / self.float_diameter / self.capture_width_ratio
+        number = self.capture_width / (self.float_diameter * self.capture_width_ratio)
         return np.ceil(number)
 
     '''
@@ -108,7 +119,7 @@ class WEC:
     '''
 
 class Wave:
-    def __init__(self, Hs: float, Te: float) -> None:
+    def __init__(self, Hs, Te) -> None:
         self.Hs = Hs
         self.Te = Te  # energy period
         self.rho = 1030
@@ -117,7 +128,7 @@ class Wave:
     @property
     def P_wave(self) -> float:
         #P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (32 * pi)  #for regular wave
-        P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (64 * pi) #for irregular wave
+        P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (64 * pi)  * 0.001  # [kw] for irregular wave
         return P_wave
 
 class Fish:
@@ -125,7 +136,7 @@ class Fish:
                  O_f, O_p, O_c, C_f, C_p, C_c, 
                  P_f, P_p, tau, loss_rate, harvest_weight, 
                  O2_min, U_min, U_max, temp_min, temp_max, 
-                 salinity_min, salinity_max, FCR, feed_unit_cost) :
+                 salinity_min, salinity_max) :
                
         self.F_f = F_f
         self.F_p = F_p
@@ -156,9 +167,6 @@ class Fish:
         self.temp_max = temp_max
         self.salinity_min = salinity_min
         self.salinity_max = salinity_max
-
-        self.FCR = FCR
-        self.feed_unit_cost = feed_unit_cost
         
         self.time_i = []
         self.W_i = []
@@ -261,7 +269,7 @@ class Fish:
         #ax1.legend()
         ax1.grid(True)
         ax1.set_xlim(0, None)
-        #plt.show()
+        plt.show()
         
         ax2 = plt.subplot(3,1,2)
         ax2.plot(self.time_i, self.DO2_i)
@@ -269,7 +277,7 @@ class Fish:
         #ax2.legend()
         ax2.grid(True)
         ax2.set_xlim(0, None)
-        #plt.show()
+        plt.show()
 
         ref_DO2 = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
         W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)
@@ -312,8 +320,9 @@ class Fish:
         
 class Pen:
     def __init__(self, D, H, Depth, SD, n, spacing, 
-                 unit_cost, temp, O2_in, U, salinity, permeability, bathymetry,
-                 pos_lat, pos_long):
+                 temp, O2_in, U, salinity, permeability, bathymetry,
+                 pos_lat, pos_long, CapEx_ref, OpEx_ref, lifetime, discount_rate,
+                 FCR, feed_unit_cost):
         self.D = D 
         self.H = H
         self.Depth = Depth
@@ -323,7 +332,6 @@ class Pen:
 
         self.fish_yield = []
 
-        self.unit_cost = unit_cost
         self.temp = temp
         self.O2_in = O2_in
         self.U = U
@@ -336,6 +344,14 @@ class Pen:
 
         self.pos_lat = pos_lat
         self.pos_long = pos_long
+
+        self.CapEx_ref = CapEx_ref
+        self.OpEx_ref = OpEx_ref
+        self.lifetime = lifetime
+        self.discount_rate = discount_rate
+
+        self.FCR = FCR
+        self.feed_unit_cost = feed_unit_cost
         
         self.TPF_O2 = 0
         
@@ -345,22 +361,39 @@ class Pen:
         return volume
 
     @property
-    def price(self) -> float:
-        price = self.n * self.volume * self.unit_cost
-        return price
+    def CapEx(self) -> float:
+        CapEx = self.n * self.volume * self.CapEx_ref
+        return CapEx
 
+    @property
+    def OpEx(self):
+        OpEx =  self.n * self.volume * self.OpEx_ref + self.fish_feed_price  # operational expense
+        return OpEx
+    
+    @property
+    def cost_NPV(self): #net present value
+        cost_NPV = self.CapEx
+        for i in range(self.lifetime):
+            cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
+        return cost_NPV
+    
     @property 
-    def power(self) -> float:
-        power = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
+    def power(self):
+        power_annual = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
+        power = (power_annual  / 8760) * np.ones(8760)
         return power
     
     @property
-    def biomass(self) -> float:
+    def biomass(self):
         biomass = self.n * self.SD * self.volume  # [kg]
         return biomass
 
-    
-    def carrying_capacity(self, fish) -> float:
+    @property
+    def fish_feed_price(self):
+        fish_feed_price = self.biomass * self.FCR * self.feed_unit_cost
+        return fish_feed_price
+
+    def carrying_capacity(self, fish):
         length = self.n * self.D
                     
         OT = (self.O2_in - fish.O2_min) * length * self.H * self.permeability * fish.U_min # [g_O2 / s]
@@ -402,3 +435,114 @@ class Vessel:
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
         return cost_NPV
+
+class DieselGen:
+    def __init__(self, fuel_consump_rate, fuel_cost, eta, load_level, CapEx_ref, OpEx_ref, lifetime, discount_rate):
+        self.fuel_consump_rate = fuel_consump_rate
+        self.fuel_cost = fuel_cost
+        self.eta = eta
+        self.load_level = load_level
+        self.CapEx_ref = CapEx_ref
+        self.OpEx_ref = OpEx_ref
+        self.lifetime = lifetime
+        self.discount_rate = discount_rate
+        self.P_rated = []
+    
+    def power(self, power_out):
+        self.P_rated = power_out / self.eta / self.load_level
+        return
+    
+    @property
+    def CapEx(self):
+        CapEx = self.P_rated  * 8760 * self.CapEx_ref # capital expense 
+        return CapEx
+    
+    @property
+    def OpEx(self):
+        OpEx = (self.fuel_cost * self.fuel_consump_rate) * 8760 + self.P_rated  * 8760 * self.OpEx_ref  # operational expense
+        return OpEx
+    
+    @property
+    def cost_NPV(self): #net present value
+        cost_NPV = self.CapEx
+        for i in range(self.lifetime):
+            cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
+        return cost_NPV
+
+class ES:
+    def __init__(self, eta, CapEx_ref, OpEx_ref, lifetime, discount_rate, soc_uplimit, soc_downlimit):
+        self.eta = eta
+        self.CapEx_ref = CapEx_ref
+        self.OpEx_ref = OpEx_ref
+        self.lifetime = lifetime
+        self.discount_rate = discount_rate
+        self.soc_uplimit = soc_uplimit
+        self.soc_downlimit = soc_downlimit
+        self.P_diff = []
+        self.size = []
+        self.total_size = []
+
+    #Hourly Power for Energy Storage
+    @property 
+    def P_stored_hour(self):
+        P_stored_hour = np.zeros(len(self.P_diff))
+        for i in range(len(self.P_diff)):
+            if self.P_diff[i]>0:
+                P_stored_hour[i] = self.P_diff[i] * self.eta
+            else:
+                P_stored_hour[i] = self.P_diff[i] / self.eta
+        P_stored_hour[0] += self.size # assuming the battery is fully charged at the start time
+        return P_stored_hour
+    
+    #Cummulative Power at Energy Storage
+    @property 
+    def P_stored_cum(self):
+        P_stored_cum = cumsum_with_limits_nb(self.P_stored_hour, self.size * self.soc_uplimit)
+        return P_stored_cum
+    
+    def sizing_func(self, P_diff):
+        self.P_diff = P_diff
+        self.size  = 0
+        self.total_size = abs(np.min(self.P_stored_cum)) / (self.soc_uplimit - self.soc_downlimit)
+    
+    @property
+    def soc(self):
+        soc = self.P_stored_cum / self.total_size
+        return soc
+
+    @property
+    def CapEx(self):
+        CapEx = self.total_size * self.CapEx_ref  # capital expense
+        return CapEx
+    
+    @property
+    def OpEx(self):
+        OpEx = self.total_size * self.OpEx_ref  # operational expense 
+        return OpEx
+    
+    @property
+    def cost_NPV(self): #net present value
+        cost_NPV = self.CapEx
+        for i in range(self.lifetime):
+            cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
+        return cost_NPV
+    
+    def plot_es(self):
+        self.size = self.total_size
+        plt.plot(self.P_stored_cum)
+        plt.axhline(y=self.total_size, color='r', linestyle='-')
+        plt.axhline(y=0, color='r', linestyle='-')
+        plt.ylabel('P_stored [W]')
+        plt.xlabel('Time [h]')
+        plt.grid()
+        plt.show()
+    
+    def plot_es_soc(self):
+        self.size = self.total_size
+        plt.plot(self.soc * 100)
+        plt.axhline(y=100, color='r', linestyle='-')
+        plt.axhline(y=0, color='r', linestyle='-')
+        plt.ylabel('SOC [%]')
+        plt.xlabel('Time [h]')
+        plt.grid()
+        plt.show()

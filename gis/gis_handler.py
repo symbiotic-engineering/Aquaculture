@@ -46,7 +46,7 @@ class GISHandler:
                                 
         # check if point has already been queried
         if not self.points.loc[(self.points.x==x) & (self.points.y==y)].empty:
-            print('point exists, returning original data')
+            #print('point exists, returning original data')
             return self.points.loc[(self.points.x==x) & (self.points.y==y)]
         
         point = Point(x, y)

@@ -29,7 +29,7 @@ def eq_constraint(x_in, x_name, p_in: dict):
 def obj_terms(x_in, x_name, p_in: dict):
     aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
     if aqua_obj.valid_point: 
-        return np.array([aqua_obj.cost_NPV, aqua_obj.pen.fish_yield, aqua_obj.pen.price, aqua_obj.wec.price])
+        return np.array([aqua_obj.cost_NPV, aqua_obj.pen.fish_yield, aqua_obj.pen.cost_NPV, aqua_obj.wec.price])
     else:
         return np.array([-1, -1, -1, -1])
 
@@ -39,7 +39,7 @@ class Aqua_Obj(object):
         self.x_name = x_name
         self.p = p
         
-        self.wec, self.wave_in, self.pen, self.fish, self.vessel, self.valid_point, self.gis_data = input_merge(self.x0, self.x_name, self.p)
+        self.wec, self.wave_in, self.pen, self.fish, self.vessel, self.es, self.dieselgen, self.valid_point, self.gis_data = input_merge(self.x0, self.x_name, self.p)
         
         if self.valid_point:
             self.fish_yield_func()
@@ -49,37 +49,51 @@ class Aqua_Obj(object):
 
             self.wec.P_gen = self.power()
 
+            self.es.sizing_func(self.wec.P_gen - self.pen.power)
+
             self.carrying_capacity = self.pen.carrying_capacity(self.fish)
             self.cost_per_yield = self.cost_NPV/self.pen.fish_yield 
 
-            # fish yield constraint to ensure a healthy offshore environment
-            self.fish_yield_cons = self.carrying_capacity - self.pen.fish_yield
+            # power supply constraint to ensure supply power demand of net pen
+            #self.P_gen_cons = (self.wec.P_gen + self.es.P) / self.wec.annual_energy
 
-            self.env_Umin_cons = self.pen.U - self.fish.U_min
-            self.env_Umax_cons = self.fish.U_max - self.pen.U
-            self.env_tempmin_cons = self.pen.temp - self.fish.temp_min
-            self.env_tempmax_cons = self.fish.temp_max - self.pen.temp
-            self.env_salinitymin_cons = self.pen.salinity - self.fish.salinity_min
-            self.env_salinitymax_cons = self.fish.salinity_max - self.pen.salinity
-            self.env_O2_min_cons = self.pen.O2_in - self.fish.O2_min
-            self.env_bathymetry_min_cons = self.pen.bathymetry - self.pen.H - self.pen.waterdepth_underpen_min
-            self.env_bathymetry_max_cons = self.pen.waterdepth_underpen_max + self.pen.H - self.pen.bathymetry
+            # fish yield constraint to ensure a healthy offshore environment
+            self.fish_yield_cons = (self.carrying_capacity - self.pen.fish_yield) / self.carrying_capacity
+
+            self.env_Umin_cons = 1 #self.pen.U - self.fish.U_min
+            self.env_Umax_cons = 1 #self.fish.U_max - self.pen.U
+            self.env_tempmin_cons = 1 #self.pen.temp - self.fish.temp_min
+            self.env_tempmax_cons = 1 #self.fish.temp_max - self.pen.temp
+            self.env_salinitymin_cons = 1 #self.pen.salinity - self.fish.salinity_min
+            self.env_salinitymax_cons = 1 #self.fish.salinity_max - self.pen.salinity
+            self.env_O2_min_cons = 1 #self.pen.O2_in - self.fish.O2_min
+            self.env_bathymetry_min_cons = 1 #self.pen.bathymetry - self.pen.H - self.pen.waterdepth_underpen_min
+            self.env_bathymetry_max_cons = 1 #self.pen.waterdepth_underpen_max + self.pen.H - self.pen.bathymetry
+
+            self.pen_ratio_low_cons = (self.pen.D - self.pen.H) / self.pen.D
+            self.pen_ratio_up_cons = (3*self.pen.H - self.pen.D) / (3*self.pen.H)
         
     @property
     def obj_func(self):
-        return self.cost_NPV
+        return self.cost_per_yield
     
     @property
     def ineq_constraint(self):
         return [self.fish_yield_cons , self.env_Umin_cons, self.env_Umax_cons,
                 self.env_tempmin_cons, self.env_tempmax_cons, 
                 self.env_salinitymin_cons, self.env_salinitymax_cons, 
-                self.env_O2_min_cons, self.env_bathymetry_min_cons, self.env_bathymetry_max_cons]
+                self.env_O2_min_cons, self.env_bathymetry_min_cons, self.env_bathymetry_max_cons,
+                self.pen_ratio_low_cons, self.pen_ratio_up_cons]
 
     @property
     def cost_NPV(self): #net present value
-        cost_NPV = self.wec.cost_NPV + self.vessel.cost_NPV
+        cost_NPV = self.wec.cost_NPV + self.vessel.cost_NPV + self.es.cost_NPV + self.pen.cost_NPV
         return cost_NPV
+    
+    @property
+    def cost_NPV_diesel(self): #net present value
+        cost_NPV_diesel = self.vessel.cost_NPV + self.dieselgen.cost_NPV + self.pen.cost_NPV
+        return cost_NPV_diesel
     
     def fish_yield_func(self):
         survival_rate = (1-self.fish.loss_rate) 
@@ -87,11 +101,8 @@ class Aqua_Obj(object):
         return 
     
     def power(self):
+        self.dieselgen.power(np.max(self.pen.power))
         return self.wec.P_electrical(self.wave_in)
-    
-    @property
-    def fish_feed_price(self):    
-        return self.pen.biomass * self.fish.FCR * self.fish.feed_unit_cost
     
     def plot_variable(self):
         self.fish.plot_variable
@@ -99,6 +110,43 @@ class Aqua_Obj(object):
     
     def carrying_capacity_print(self):
         return self.pen.TPF_O2, self.carrying_capacity
+    
+    def plot_power(self):
+        ax1 = plt.subplot(5,1,1)
+        ax1.plot(self.wec.P_mechanical(self.wave_in.P_wave))
+        ax1.set(xlabel='time [hour]', ylabel='P_mechanical(kW)');
+        ax1.grid()
+        #plt.ylim(-10, 10)
+        plt.show()
+
+        ax1 = plt.subplot(5,1,2)
+        ax1.plot(self.wec.P_electrical(self.wave_in))
+        ax1.set(xlabel='time [hour]', ylabel='P_electrical(kW)');
+        ax1.grid()
+        #plt.ylim(0, 20)
+        plt.show()
+
+        ax1 = plt.subplot(5,1,3)
+        ax1.plot(self.pen.power)
+        ax1.set(xlabel='time [hour]', ylabel='pen power(kW)');
+        ax1.grid()
+        #plt.ylim(-10, 10)
+        plt.show()
+
+        ax1 = plt.subplot(5,1,4)
+        ax1.plot(self.es.P_diff)
+        ax1.set(xlabel='time [hour]', ylabel='P_diff(kW)');
+        ax1.grid()
+        #plt.ylim(-20, 20)
+        plt.show()
+
+        ax3 = plt.subplot(5,1,5)
+        self.es.size = self.es.total_size
+        ax3.plot(self.es.P_stored_cum)
+        plt.axhline(y=self.es.total_size, color='r', linestyle='-')
+        ax3.set(xlabel='time [hour]', ylabel='P_stored_cum (kW)')
+        ax3.grid()
+        plt.show()
 
 def input_merge(x_in, x_name, p):
     # merge input dicts
@@ -108,26 +156,31 @@ def input_merge(x_in, x_name, p):
     for i in range(len(x_list)):
         x[x_list[i]] = x_in[i]
  
+    valid_point = False
     gis_data = []
-    if 'pos_env' in x_name:
-        if 'handler' in p:
+    if 'handler' in p:
+        if 'pos_env' in x_name:
             gis_data =  p['handler'].query(x_in[1], x_in[0]) #import_gis_data(x_in[0], x_in[1])
         else:
-            print('GIS handler is needed!')
-            exit()
+            gis_data =  p['handler'].query(p['pos_long'], p['pos_lat']) #import_gis_data(x_in[0], x_in[1])
+        
+        duration = 8760
         p['U'] = float(gis_data["current [m/s]"])
         p['O2_in'] = float(gis_data["oxygen [mg/l]"])
         p['salinity'] = float(gis_data["salinity [PSU]"])
         p['temp'] = float(gis_data["temperature [°C]"])
-        p['bathymetry'] = -float(gis_data["bathymetry [m]"])
-        p['wave_energy_period'] = float(gis_data["period [s]"])
-        p['wave_height'] = float(gis_data["height [m]"])
+        p['bathymetry'] = (-float(gis_data["bathymetry [m]"]))
+        p['wave_energy_period'] = np.ones(duration) * float(gis_data["period [s]"])
+        p['wave_height'] = np.ones(duration) * float(gis_data["height [m]"])
         p['distance'] = float(gis_data["distance to port [m]"]) / 1000
         valid_point = gis_data["ok-conditions"].bool() and gis_data["ok-scope"].bool() #and gis_data["ok-conflicts"].bool()
     else:
-        valid_point = True
+        print('GIS handler is needed!')
+        exit()
+        
 
     ins = {**x, **p}
+    #print(x)
 
     # create objects
     wave_in = Wave(ins['wave_height'], ins['wave_energy_period'])
@@ -135,25 +188,31 @@ def input_merge(x_in, x_name, p):
     wec = WEC(ins['capture_width'], ins['capture_width_ratio_dict'],
             ins['wave_damping_dict'], ins['wec_type'],
             ins['capacity_factor'], ins['eta'], ins['float_diameter'],
-            ins['CapEx_ref'], ins['OpEx_ref'], ins['lifetime'], ins['discount_rate'])
+            ins['wec_CapEx_ref'], ins['wec_OpEx_ref'], ins['lifetime'], ins['discount_rate'])
 
     pen = Pen(ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
-              ins['num_pens'], ins['spacing'], ins['pen_unit_cost'], ins['temp'], 
+              ins['num_pens'], ins['spacing'], ins['temp'], 
               ins['O2_in'], ins['U'], ins['salinity'], ins['permeability'], ins['bathymetry'],
-              ins['pos_lat'], ins['pos_long'])
+              ins['pos_lat'], ins['pos_long'], ins['pen_CapEx_ref'], ins['pen_OpEx_ref'], ins['lifetime'], ins['discount_rate'],
+              ins['FCR'], ins['feed_unit_cost'])
     
     fish = Fish(ins['F_f'], ins['F_p'], ins['F_c'], ins['A_f'], ins['A_p'], ins['A_c'],
                 ins['O_f'], ins['O_p'], ins['O_c'], ins['C_f'], ins['C_p'], ins['C_c'],
                 ins['P_f'], ins['P_p'], ins['tau'], ins['loss_rate'], ins['harvest_weight'], 
                 ins['O2_min'], ins['U_min'], ins['U_max'], ins['temp_min'], ins['temp_max'], 
-                ins['salinity_min'], ins['salinity_max'], ins['FCR'], ins['feed_unit_cost'])
+                ins['salinity_min'], ins['salinity_max'])
     
     vessel = Vessel(ins['vessel_fuel_consump_rate'], ins['vessel_fuel_cost'], 
                 ins['captain_salary'], ins['crew_salary'], ins['crew_num'], 
                 ins['time_feed'], ins['vessel_velocity'], ins['travel_number'], ins['distance'],
                 ins['lifetime'], ins['discount_rate'])
-                
-    return wec, wave_in, pen, fish, vessel, valid_point, gis_data
+    
+    es = ES(ins['es_eta'], ins['es_CapEx_ref'], ins['es_OpEx_ref'], ins['lifetime'], ins['discount_rate'], ins['es_soc_uplimit'], ins['es_soc_downlimit'])
+
+    dieselgen = DieselGen(ins['diesel_fuel_consump_rate'], ins['diesel_fuel_cost'], ins['diesel_eta'], ins['diesel_load_level'],
+                          ins['diesel_CapEx_ref'], ins['diesel_OpEx_ref'], ins['lifetime'], ins['discount_rate'])
+
+    return wec, wave_in, pen, fish, vessel, es, dieselgen, valid_point, gis_data
 
 
 def variable_lookup(var_category_names):
@@ -173,12 +232,15 @@ def variable_lookup(var_category_names):
         var_list.append('pen_height')
         var_list.append('stock_density')
 
-    if any('p_pen' in i for i in var_category_names):
+    if any('x_disc_pen' in i for i in var_category_names):
         var_list.append('num_pens')
+
+    if any('p_pen' in i for i in var_category_names):
         var_list.append('spacing')
         var_list.append('pen_depth')
-        var_list.append('pen_unit_cost')
         var_list.append('permeability')
+        var_list.append('pen_CapEx_ref')
+        var_list.append('pen_OpEx_ref')
         
     if any('pos_env' in i for i in var_category_names):
         var_list.append('pos_lat')
@@ -204,8 +266,8 @@ def variable_lookup(var_category_names):
         var_list.append('eta')
         var_list.append('capacity_factor')
         var_list.append('float_diameter')
-        var_list.append('CapEx_ref')
-        var_list.append('OpEx_ref')
+        var_list.append('wec_CapEx_ref')
+        var_list.append('wec_OpEx_ref')
         var_list.append('lifetime')
         var_list.append('discount_rate')
     
@@ -248,6 +310,21 @@ def variable_lookup(var_category_names):
         var_list.append('travel_number')
         var_list.append('distance')
 
+    if any('p_es' in i for i in var_category_names):
+        var_list.append('es_eta')
+        var_list.append('es_CapEx_ref')
+        var_list.append('es_OpEx_ref')
+        var_list.append('es_soc_uplimit')
+        var_list.append('es_soc_downlimit')
+
+    if any('p_diesel' in i for i in var_category_names):
+        var_list.append('diesel_eta')
+        var_list.append('diesel_fuel_consump_rate')
+        var_list.append('diesel_fuel_cost')
+        var_list.append('diesel_load_level')
+        var_list.append('diesel_CapEx_ref')
+        var_list.append('diesel_OpEx_ref')
+
     if len(var_list)==0:
         print('Your input did not match any of the category names.', var_category_names)
     
@@ -272,12 +349,15 @@ def default_values(var_category_names):
         vals['pen_height'] = (15, '[m]')  
         vals['stock_density'] = (20 , '[kg/m^3]')
    
-    if any('p_pen' in i for i in var_category_names):
+    if any('x_disc_pen' in i for i in var_category_names):
         vals['num_pens'] = (12, '[-]')  #{5, 12, 40}
+
+    if any('p_pen' in i for i in var_category_names):
         vals['spacing'] = (150, '[m]')
         vals['pen_depth'] = (10, '[m]')   
-        vals['pen_unit_cost'] = (100, '[$/m^3]')    # 80 $/m^3 for net pen + 20 $/m^3 for mooring
-        vals['permeability'] = (0.8, '[-]')      
+        vals['permeability'] = (0.8, '[-]')   
+        vals['pen_CapEx_ref'] = (100, '[$/m^3]')    # 80 $/m^3 for net pen + 20 $/m^3 for mooring
+        vals['pen_OpEx_ref'] = (0, '[$/m^3]')   
         
     if any('pos_env' in i for i in var_category_names):
         vals['pos_lat'] = (42.0, 'm')  
@@ -303,8 +383,8 @@ def default_values(var_category_names):
         vals['eta'] = (0.8,'[-]') 
         vals['capacity_factor'] = (0.3,'[-]') 
         vals['float_diameter'] = (20, '[m]')
-        vals['CapEx_ref'] = (4833448, '[$]')
-        vals['OpEx_ref'] = (116050, '[$]')
+        vals['wec_CapEx_ref'] = (5142789, '[$]') #cost in 2023
+        vals['wec_OpEx_ref'] = (123477, '[$]')   #cost in 2023
         vals['lifetime'] = (20, '[year]')
         vals['discount_rate'] = (0.07, '[-]')
         
@@ -347,6 +427,21 @@ def default_values(var_category_names):
         vals['travel_number'] = (52,'[-]') # once per week for a year
         vals['distance'] = (76157.726562/1000, '[km]')
     
+    if any('p_es' in i for i in var_category_names):
+        vals['es_eta'] = (0.92,'[-]')
+        vals['es_soc_uplimit'] = (0.85,'%')
+        vals['es_soc_downlimit'] = (.15,'%')
+        vals['es_CapEx_ref'] = (271, '[$/kWh]')
+        vals['es_OpEx_ref'] = (0, '[$/kWh]')
+
+    if any('p_diesel' in i for i in var_category_names):
+        vals['diesel_eta'] = (.40,'[%]')
+        vals['diesel_fuel_consump_rate'] = (7.6,'[gal/h]')  # for 135 kW
+        vals['diesel_fuel_cost'] = (3.5,'[$/gal]')
+        vals['diesel_load_level'] = (0.75,'[%]') 
+        vals['diesel_CapEx_ref'] = (0.3*1.14,'[$/kWh]')
+        vals['diesel_OpEx_ref'] = (0,'[$/kWh]')
+
     #assert(fieldnames(vals) == variable_lookup(var_category_names));
     return vals
 
@@ -354,13 +449,16 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 23)      #[m]  
+        bnds['capture_width'] = (1, 50)      #[m]
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 45)      #[m]  
-        bnds['pen_height'] = (10, 30)        #[m]  
-        bnds['stock_density'] = (10, 20)     #[kg/m^3]
+        bnds['pen_height'] = (10, 30)        #[m]   
+        bnds['stock_density'] = (10, 20)     #[kg/m^3]  
     
+    if any('x_disc_pen' in i for i in var_category_names):
+        bnds['num_pens'] = (10, 20)         #[-] 
+
     if any('pos_env' in i for i in var_category_names):
         bnds['pos_lat'] = (38.4, 45.2)        #[m]
         bnds['pos_long'] = (-75.8, -65.7)     #[m]
@@ -371,4 +469,7 @@ def bnds_values(var_category_names):
         bnds['wave_height'] = (0.2, 3)      #[m]
         bnds['wave_period'] = (1, 12)       #[s]
     
+    if any('x_es' in i for i in var_category_names):
+        bnds['es_size'] = (5, 5000)          #[kWh] (5,500) without cost travel from shore
+
     return bnds
