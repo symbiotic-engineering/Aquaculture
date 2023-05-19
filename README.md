@@ -14,7 +14,7 @@ This repository consists of the following files:
 - requirements.txt: list of the required libraries.
 
 ## How to use
-In order to run the "Marine spatial planning" optimization code and find optimal location for wave-powered aquaculture farm (WPAF) for constant net pen within the Northeast U.S., you can open and run the run_sim_env (.ipynb) file.
+In order to run the "Marine spatial planning" optimization code and find optimal location for wave-powered aquaculture farm (WPAF) for constant net pen within the Northeast U.S., you can open and run the run_sim_env (.ipynb) file. *Note:* because geospatial data files are uploaded using git lfs, you must clone the repository or download them individually instead of downloading the repository as a zip.
 
 ## Dependencies
 Python 3.8.8 is used to develop this package. 
