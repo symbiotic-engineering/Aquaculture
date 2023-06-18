@@ -362,8 +362,8 @@ def bnds_values(var_category_names):
         bnds['stock_density'] = (10, 20)     #[kg/m^3]
     
     if any('pos_env' in i for i in var_category_names):
-        bnds['pos_lat'] = (38.4, 45.2)        #[m]
-        bnds['pos_long'] = (-75.8, -65.7)     #[m]
+        bnds['pos_lat'] = (38.45, 45.19)        #[m]
+        bnds['pos_long'] = (-75.78, -65.70)     #[m]
     
     if any('x_env' in i for i in var_category_names):
         bnds['temp'] = (1, 50)              #[C] 

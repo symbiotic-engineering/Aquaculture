@@ -2,7 +2,6 @@ from modules import Aqua_Obj
 from optimization import OpData
 import optimization
 from utilities import *
-from env_opt import *
 import copy
 import numpy as np
 import geopandas as gpd
