@@ -16,10 +16,10 @@ def wpaf_opt(all_vars, *args):
     # design variables and parameters
     if 'p_wave_vec' in all_vars:
         x_name = ['x_wec','x_pen', 'x_es']
-        p_name = ['x_type_wec', 'x_env', 'gis_handler'] #,'x_env'
+        p_name = ['x_type_wec', 'x_env', 'x_wave_env', 'gis_handler', 'pos_env', 'p_pen_power'] #,'x_env'
     else: # es is not required when average wave is given
         x_name = ['x_wec','x_pen']
-        p_name = ['x_type_wec', 'x_env', 'x_es', 'gis_handler'] #,'x_env'
+        p_name = ['x_type_wec', 'x_env', 'x_wave_env', 'x_es', 'gis_handler', 'pos_env', 'p_pen_power'] #,'x_env'
 
     x = OpData(x_name)
     if 'x0' in args[0]:
@@ -49,6 +49,28 @@ def wpaf_opt(all_vars, *args):
         print('GIS handler is needed!')
         exit()
     
+
+    if 'wave_data' in args[0]:
+        df = pd.read_csv(args[0]['wave_data'])
+        param.nom_dict['pos_lat'] = float(df['Latitude'][0])
+        param.nom_dict['pos_long'] = float(df['Longitude'][0])
+
+        df = pd.read_csv(args[0]['wave_data'], skiprows=2)
+        wave_period = df['Energy Period']
+        wave_height = df['Significant Wave Height']
+        param.nom_dict['wave_height'] = np.array(wave_period.values)
+        param.nom_dict['wave_energy_period'] = np.array(wave_height.values)
+
+    if 'aqua_load' in args[0]:
+        df = pd.read_excel(args[0]['aqua_load'])
+        time_index = df['Hour']
+        time_index = np.array(time_index.values)
+        year_hour = range(1, 8761+1)
+        hourly_index = np.nonzero(np.in1d(time_index,year_hour))[0] #return the index of each hour
+        power_hourly = df['energy (kWh)'][hourly_index]   # sample hourly power since the data is stored with resulotion of 0.2 hour [with some missing points between]
+        power_8760_hour = power_hourly[0:8760]   # for fish yield of 12 net pens with 30 m diameter 15 m height and 20 kg/m^3
+        param.nom_dict['aqua_load'] = np.array(power_8760_hour.values)
+
     #optimization
     res = {}
     res_best = {}

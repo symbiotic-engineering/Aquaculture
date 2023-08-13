@@ -24,7 +24,7 @@ def print_P_rated(title, aqua_obj):
 def print_carrying_capacity(title, aqua_obj):
     print_bold(title+" carrying capacity:")
     print(' '*2, "TPF_O2              ", "{:10.3f}".format(aqua_obj.pen.TPF_O2), '[kg fish/year]')
-    print(' '*2, "Carrying Capacity   ", "{:10.3f}".format(aqua_obj.carrying_capacity), '[kg fish]')
+    print(' '*2, "Carrying Capacity   ", "{:10.3f}".format(aqua_obj.pen.carrying_capacity), '[kg fish]')
     print("-"*40)
 
 def print_price_breakdown(title, aqua_obj):
@@ -32,7 +32,8 @@ def print_price_breakdown(title, aqua_obj):
     print(' '*2, "wec NPV             ", "{:10.3f}".format(aqua_obj.wec.cost_NPV), '[$]')
     print(' '*2, "Aqua NPV            ", "{:10.3f}".format(aqua_obj.pen.cost_NPV), '[$]')
     print(' '*2, "Net Pen CapEx       ", "{:10.3f}".format(aqua_obj.pen.CapEx), '[$]')
-    print(' '*2, "fish feed price     ", "{:10.3f}".format(aqua_obj.pen.fish_feed_price), '[$]')
+    print(' '*2, "fish feed price     ", "{:10.3f}".format(aqua_obj.pen.fish_feed_price), '[$/fish life cycle]')
+    print(' '*2, "fingerling price    ", "{:10.3f}".format(aqua_obj.pen.fingerling_price), '[$/fish life cycle]')
     print(' '*2, "vessel travel NPV   ", "{:10.3f}".format(aqua_obj.vessel.cost_NPV), '[$]')
     print(' '*2, "energy storage NPV  ", "{:10.3f}".format(aqua_obj.es.cost_NPV), '[$]')
     print(' '*2, "diesel NPV          ", "{:10.3f}".format(aqua_obj.dieselgen.cost_NPV), '[$]')
@@ -45,7 +46,24 @@ def print_ineq_cons(title,aqua_obj):
     print(' '*2, "normalized pen_ratio_low_cons  ", "{:10.3f}".format(aqua_obj.pen_ratio_low_cons), '[-]')
     print(' '*2, "normalized pen_ratio_up_cons   ", "{:10.3f}".format(aqua_obj.pen_ratio_up_cons), '[-]')
     print("-"*40)
-            
+
+def print_location(title, aqua_obj):
+    print_bold(title+" Location:")
+    print(' '*2, "Longitude   ", "{:10.3f}".format(aqua_obj.pen.pos_long))
+    print(' '*2, "Latitude    ", "{:10.3f}".format(aqua_obj.pen.pos_lat))
+    print("-"*40)
+
+def print_energy_storage(title, aqua_obj):
+    print_bold(title+" es size:")
+    print(' '*2, "es size   ", "{:10.3f}".format(aqua_obj.es.total_size), '[kWh]')
+    print("-"*40)
+
+def print_feedbarge(title, aqua_obj):
+    print_bold(title+" feedbarge:")
+    print(' '*2, "fish feed harvest week         ", "{:10.3f}".format(aqua_obj.pen.fish_feed_harvest_week), '[kg]')
+    print(' '*2, "fish feed harvest week per pen ", "{:10.3f}".format(aqua_obj.pen.fish_feed_harvest_week / aqua_obj.pen.pen_number), '[kg]')
+    print(' '*2, "feedbarge number               ", "{:10.3f}".format(aqua_obj.pen.feedbarge_number), '[-]')
+
 def init_result(aqua_init_obj):
     print('+'*40) 
     if (aqua_init_obj.valid_point):
@@ -67,14 +85,17 @@ def optimize_result(aqua_opt_obj, x_list, x_unit, res_opt):
         for i in range(len(x_list)):
             print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(res_opt.x[i]), x_unit[i])
 
-        print(' '*2, "pen number    ", "{:10.3f}".format(aqua_opt_obj.pen.n), '[-]')
+        print(' '*2, "pen number    ", "{:10.3f}".format(aqua_opt_obj.pen.pen_number), '[-]')
         print("-"*40)
         
+        print_location("deployment",aqua_opt_obj)
         print_objective("optimal",aqua_opt_obj)
         print_P_rated("optimal",aqua_opt_obj)
         print_price_breakdown("optimal",aqua_opt_obj)
         print_ineq_cons("optimal",aqua_opt_obj)
         print_carrying_capacity("optimal",aqua_opt_obj)
+        print_feedbarge("optimal",aqua_opt_obj)
+        print_energy_storage("optimal",aqua_opt_obj)
     else:
         print('invalid optimized point')
     print('+'*40) 

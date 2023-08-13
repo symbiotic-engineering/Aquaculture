@@ -5,6 +5,7 @@ from scipy.integrate import quad
 from matplotlib import pyplot as plt
 from numba import njit
 
+
 @njit
 def cumsum_with_limits_nb(values, uplimit):
     n = len(values)
@@ -136,7 +137,8 @@ class Fish:
                  O_f, O_p, O_c, C_f, C_p, C_c, 
                  P_f, P_p, tau, loss_rate, harvest_weight, 
                  O2_min, U_min, U_max, temp_min, temp_max, 
-                 salinity_min, salinity_max) :
+                 salinity_min, salinity_max, fish_life_cycle,
+                 fingerling_weight, fingerling_unit_cost) :
                
         self.F_f = F_f
         self.F_p = F_p
@@ -167,6 +169,10 @@ class Fish:
         self.temp_max = temp_max
         self.salinity_min = salinity_min
         self.salinity_max = salinity_max
+
+        self.fish_life_cycle = fish_life_cycle
+        self.fingerling_weight = fingerling_weight
+        self.fingerling_unit_cost = fingerling_unit_cost
         
         self.time_i = []
         self.W_i = []
@@ -207,7 +213,7 @@ class Fish:
 
         # Fish growth as a function of time
         a = 0.038
-        W_0 = 50 #[g]
+        W_0 = self.fingerling_weight * 1000 #50 #[g]
         W_i = np.zeros(len(time_i))
         W_dot_i = np.zeros(len(time_i))
         DO2_p_i = np.zeros(len(time_i))
@@ -319,18 +325,21 @@ class Fish:
         plt.show()
         
 class Pen:
-    def __init__(self, D, H, Depth, SD, n, spacing, 
+    def __init__(self, fish, D, H, Depth, SD, pen_number, spacing, 
                  temp, O2_in, U, salinity, permeability, bathymetry,
-                 pos_lat, pos_long, CapEx_ref, OpEx_ref, lifetime, discount_rate,
-                 FCR, feed_unit_cost):
+                 pos_lat, pos_long, pen_CapEx_ref, pen_OpEx_ref, feedbarge_CapEx_ref, feedbarge_OpEx_ref,
+                 lifetime, discount_rate,
+                 FCR, feed_unit_cost, aqua_load, feedbarge_unit_capacity, feedbarge_unit_feedlines):
+        self.fish = fish
+
         self.D = D 
         self.H = H
         self.Depth = Depth
         self.SD = SD 
-        self.n = n 
+        self.pen_number = pen_number
         self.spacing = spacing
 
-        self.fish_yield = []
+        #self.fish_yield = []
 
         self.temp = temp
         self.O2_in = O2_in
@@ -345,29 +354,52 @@ class Pen:
         self.pos_lat = pos_lat
         self.pos_long = pos_long
 
-        self.CapEx_ref = CapEx_ref
-        self.OpEx_ref = OpEx_ref
+        self.pen_CapEx_ref = pen_CapEx_ref
+        self.pen_OpEx_ref = pen_OpEx_ref
         self.lifetime = lifetime
         self.discount_rate = discount_rate
+
+        self.feedbarge_CapEx_ref = feedbarge_CapEx_ref
+        self.feedbarge_OpEx_ref = feedbarge_OpEx_ref
+        self.feedbarge_unit_capacity = feedbarge_unit_capacity
+        self.feedbarge_unit_feedlines = feedbarge_unit_feedlines
 
         self.FCR = FCR
         self.feed_unit_cost = feed_unit_cost
         
         self.TPF_O2 = 0
+        self.power_ref = aqua_load / 2544487  # kWh/kg
         
     @property 
-    def volume(self) -> float:
+    def volume(self):
         volume = pi * self.D**2 / 4 * self.H
         return volume
 
     @property
+    def fish_feed_harvest_week(self):
+        fish_feed_harvest_week = self.fish_yield * .02 * 7  # require a daily fish feed of 2% of fish yield for a week
+        return fish_feed_harvest_week
+
+    @property 
+    def feedbarge_number(self):
+        if ((self.fish_feed_harvest_week / self.pen_number) < (self.feedbarge_unit_capacity / self.feedbarge_unit_feedlines)):
+            feedbarge_number = self.pen_number / self.feedbarge_unit_feedlines
+        else:
+            feedbarge_number = np.ceil(self.fish_feed_harvest_week / self.feedbarge_unit_capacity)
+        return feedbarge_number
+    
+    @property
     def CapEx(self) -> float:
-        CapEx = self.n * self.volume * self.CapEx_ref
+        CapEx_pen = self.pen_number * self.volume * self.pen_CapEx_ref
+        CapEx_feedbarge = self.feedbarge_number * self.feedbarge_CapEx_ref
+        CapEx = CapEx_pen + CapEx_feedbarge
         return CapEx
 
     @property
     def OpEx(self):
-        OpEx =  self.n * self.volume * self.OpEx_ref + self.fish_feed_price  # operational expense
+        pen_OpEx =  self.pen_number * self.volume * self.pen_OpEx_ref 
+        feedbarge_OpEx = self.feedbarge_number * self.feedbarge_OpEx_ref 
+        OpEx = pen_OpEx + feedbarge_OpEx + self.fish_feed_price_annual + self.fingerling_price_annual # operational expense
         return OpEx
     
     @property
@@ -379,27 +411,49 @@ class Pen:
     
     @property 
     def power(self):
-        power_annual = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
-        power = (power_annual  / 8760) * np.ones(8760)
+        #power_annual = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
+        #power = (power_annual  / 8760) * np.ones(8760)
+        power = self.power_ref * self.fish_yield
         return power
+
+    @property
+    def fingerling_price(self):
+        fingerling_price = self.fish_yield * self.fish.fingerling_weight / self.fish.harvest_weight / (1-self.fish.loss_rate) * self.fish.fingerling_unit_cost # [kg]
+        return fingerling_price
+    
+    @property
+    def fingerling_price_annual(self):
+        fingerling_price_annual = self.fingerling_price * 365/self.fish.fish_life_cycle
+        return fingerling_price_annual
     
     @property
     def biomass(self):
-        biomass = self.n * self.SD * self.volume  # [kg]
+        biomass = self.pen_number * self.SD * self.volume  # [kg]
         return biomass
+    
+    @property
+    def fish_yield(self):
+        fish_yield = self.pen_number * self.SD * self.volume  # [kg]
+        return fish_yield
 
     @property
     def fish_feed_price(self):
-        fish_feed_price = self.biomass * self.FCR * self.feed_unit_cost
+        fish_feed_price = self.fish_yield * self.FCR * self.feed_unit_cost
         return fish_feed_price
+    
+    @property
+    def fish_feed_price_annual(self):
+        fish_feed_price_annual = self.fish_feed_price * 365/self.fish.fish_life_cycle
+        return fish_feed_price_annual
 
-    def carrying_capacity(self, fish):
-        length = self.n * self.D
+    @property
+    def carrying_capacity(self):
+        length = self.pen_number * self.D
                     
-        OT = (self.O2_in - fish.O2_min) * length * self.H * self.permeability * fish.U_min # [g_O2 / s]
-        self.TPF_O2 = (OT * 3600 * 24 * 365) / fish.DO2(self.temp)  # [kg-fish / year]
+        OT = (self.O2_in - self.fish.O2_min) * length * self.H * self.permeability * self.fish.U_min # [g_O2 / s]
+        self.TPF_O2 = (OT * 3600 * 24 * 365) / self.fish.DO2(self.temp)  # [kg-fish / year]
 
-        carrying_capacity = (OT * 3600 * 24) / fish.DO2_i[-1] 
+        carrying_capacity = (OT * 3600 * 24) / self.fish.DO2_i[-1] 
         self.carrying_capacity_value = carrying_capacity
         
         return carrying_capacity
