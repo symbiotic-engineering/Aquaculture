@@ -9,6 +9,14 @@ def obj(x_in, x_name, p_in: dict):
     else:
         return aqua_obj.obj_func + 30000
 
+# NEW inclusion of multi-objective function
+def multi_obj(x_in, x_name, p_in: dict):
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    if aqua_obj.valid_point:
+        return np.array(aqua_obj.multi_obj_func)
+    else:
+        return np.array([-1, -1])
+
 def ineq_constraint(x_in, x_name, p_in: dict):
     aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
     if aqua_obj.valid_point: 
@@ -16,7 +24,6 @@ def ineq_constraint(x_in, x_name, p_in: dict):
     else: 
         g = np.array([-1])
     return g
-
 
 def eq_constraint(x_in, x_name, p_in: dict):
     aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
@@ -71,11 +78,18 @@ class Aqua_Obj(object):
             self.env_bathymetry_max_cons = 1 #self.pen.waterdepth_underpen_max + self.pen.H - self.pen.bathymetry
 
             self.pen_ratio_low_cons = (self.pen.D - self.pen.H) / self.pen.D
-            self.pen_ratio_up_cons = (3*self.pen.H - self.pen.D) / (3*self.pen.H)
-        
+            self.pen_ratio_up_cons = (3*self.pen.H - self.pen.D) / (3*self.pen.H) 
+    
     @property
     def obj_func(self):
         return self.cost_per_yield
+    
+    # NEW inclusion of multi-objective function
+    # Currently set it as returning my the two objective functions separated by 
+    # a comma
+    @property
+    def multi_obj_func(self):
+        return self.cost_per_yield, self.pen.fish_yield  
     
     @property
     def ineq_constraint(self):
@@ -150,7 +164,6 @@ class Aqua_Obj(object):
 
 def input_merge(x_in, x_name, p):
     # merge input dicts
-    
     x_list = variable_lookup(x_name)
     x = {}
     for i in range(len(x_list)):

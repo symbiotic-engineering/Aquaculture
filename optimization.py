@@ -25,9 +25,13 @@ class OpObj(object):
         self.ineq = np.full(shape=(max_iter,len(modules.ineq_constraint(x0, x_name, p))), fill_value=np.NaN)
         self.eq = np.full(shape=(max_iter,len(modules.eq_constraint(x0, x_name, p))), fill_value=np.NaN)
         self.count = 0
-        
+     
     def obj_fun(self, x):
         return obj_fun(x, self.x_name, self.p)
+    
+    # NEW inclusion of multi-objective function
+    def multi_obj_fun(self, x):
+        return multi_obj_fun(x, self.x_name, self.p)
 
 def cb(xk, obj=None):
     obj.f[obj.count] = obj.obj_fun(xk)
@@ -39,6 +43,10 @@ def cb(xk, obj=None):
 
 def obj_fun(x0, x_name, p):
     return modules.obj(x0, x_name, p)
+
+# NEW inclusion of multi-objective function
+def multi_obj_fun(x0, x_name, p):
+    return modules.multi_obj(x0, x_name, p)
 
 def default_value(v_name):
     v_label = ''
@@ -91,9 +99,10 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
     else:
         x0 = x_vals
     
+    print("SINGLE: x0 = ", x0)
+    
     # fill default parameters
     p = argument_fun(x.name, p_name, p_vals, all_vars)
-
         
     # set up optimization problem
     op_obj = OpObj(x0, x.name, p.nom_dict, max_iter) 
@@ -113,7 +122,6 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
 
     options={"maxiter":max_iter} #, 'eps': .5}  # "ftol": 1e-4
     
-    
     res = minimize(obj_fun, op_obj.x0, 
                    args=arguments, 
                    method='SLSQP',
@@ -122,4 +130,90 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
                    options=options,
                    callback=partial(cb, obj=op_obj))
     
+    print("SINGLE: res = ", res)
+    
     return res, op_obj, p
+
+# ============================================================================ #
+#                       Multi-Objective Optimization                           #
+# ============================================================================ #
+
+import numpy as np
+from pymoo.core.problem import ElementwiseProblem
+from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.operators.crossover.sbx import SBX
+from pymoo.operators.mutation.pm import PM
+from pymoo.operators.sampling.rnd import FloatRandomSampling
+from pymoo.termination import get_termination
+from pymoo.optimize import minimize as min
+
+class MyProblem(ElementwiseProblem):
+    
+    # Problem definition of the multi-objective optimization
+    def __init__(self, x_name, p_name, p_vals, all_vars, max_iter):
+        
+        x = OpData(x_name)
+        p = argument_fun(x.name, p_name, p_vals, all_vars)
+        
+        n_var = len(x.list)
+
+        xl = np.zeros(n_var)
+        xu = np.zeros(n_var)
+        
+        for i in range(len(x.bnds)):
+            lower, upper = x.bnds[i]
+            xl[i] = lower
+            xu[i] = upper
+            
+        super().__init__(n_var=n_var,
+                         n_obj=2,
+                         n_ieq_constr=12,
+                         xl=xl,
+                         xu=xu)
+        
+        self.x = x
+        self.parameters = p
+        self.max_iter = max_iter
+    
+    # Evaluation of objective functions
+    def _evaluate(self, x, out, *args, **kwargs):
+        
+        x_name = self.x.name
+        p = self.parameters
+        x0 = self.x.nom0
+        
+        op_obj = OpObj(x0, x_name, p.nom_dict, self.max_iter)
+        
+        f1 = (op_obj.multi_obj_fun(x))[0]
+        f2 = (op_obj.multi_obj_fun(x))[1]
+
+        gi = [modules.ineq_constraint(x, x_name, p.nom_dict)[i] for i in range(12)]
+        
+        out["F"] = [f1, f2]
+        out["G"] = gi
+        
+
+# Separate function to run the multi-objective optimization itself
+def run_multi_optimization(x_name, p_name, p_vals, all_vars, max_iter):
+    
+    problem = MyProblem(x_name, p_name, p_vals, all_vars, max_iter)
+    
+    algorithm = NSGA2(pop_size=50,
+                      n_offsprings=10,
+                      sampling=FloatRandomSampling(),
+                      crossover=SBX(prob=0.9, eta=15),
+                      mutation=PM(eta=20),
+                      eliminate_duplicates=True)
+
+    termination = get_termination("n_gen", 10)
+    
+    res = min(problem,
+              algorithm,
+              termination,
+              seed=1,
+              verbose=True)
+
+    X = res.X
+    F = res.F
+    
+    return X, F
