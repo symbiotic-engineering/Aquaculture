@@ -25,6 +25,9 @@ For other required libraries, please refer to requirements.txt file.
 ## Context
 The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab and has been submitted to the International Society of Offshore and Polar Engineers (ISOPE 2023).
 
+## Citation
+Hasankhani, A., McCabe, R., Ewig, G., Won, E. T., & Haji, M. N. (2023, June). Conceptual design and optimization of a wave-powered offshore aquaculture farm. In The 33rd International Ocean and Polar Engineering Conference. OnePetro.
+
 ## Authors
 - Arezoo Hasankhani, ah844@cornell.edu (Point of contact)
 - Rebecca McCabe, rgm222@cornell.edu 
