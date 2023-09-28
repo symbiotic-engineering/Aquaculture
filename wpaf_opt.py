@@ -5,6 +5,7 @@ import optimization
 from utilities import *
 import copy
 import numpy as np
+import random
 #import importlib
 #importlib.reload(modules)
 
@@ -58,18 +59,29 @@ def wpaf_opt(all_vars, *args):
         df = pd.read_csv(args[0]['wave_data'], skiprows=2)
         wave_period = df['Energy Period']
         wave_height = df['Significant Wave Height']
-        param.nom_dict['wave_height'] = np.array(wave_period.values)
-        param.nom_dict['wave_energy_period'] = np.array(wave_height.values)
+        noise= np.random.rand(8760)
+        vec = 1.37 * np.ones(8760)
+        vec[1000:1100] = 1.2
+        param.nom_dict['wave_height'] = np.array(wave_period.values) #vec + noise/10  #
+        param.nom_dict['wave_energy_period'] = np.array(wave_height.values)  #6.44 * np.ones(8760) #
 
     if 'aqua_load' in args[0]:
         df = pd.read_excel(args[0]['aqua_load'])
-        time_index = df['Hour']
+        time_index = df['hour']
         time_index = np.array(time_index.values)
-        year_hour = range(1, 8761+1)
-        hourly_index = np.nonzero(np.in1d(time_index,year_hour))[0] #return the index of each hour
-        power_hourly = df['energy (kWh)'][hourly_index]   # sample hourly power since the data is stored with resulotion of 0.2 hour [with some missing points between]
-        power_8760_hour = power_hourly[0:8760]   # for fish yield of 12 net pens with 30 m diameter 15 m height and 20 kg/m^3
-        param.nom_dict['aqua_load'] = np.array(power_8760_hour.values)
+        summer_feedbarge_power = df['summer feedbarge kw']
+        summer_lighting_power_per_kg = df['summer lighting kw/kg']
+        summer_equipment_power_per_kg = df['summer equipment kw/kg']
+        winter_feedbarge_power = df['winter feedbarge kw']
+        winter_lighting_power_per_kg = df['winter lighting kw/kg']
+        winter_equipment_power_per_kg = df['winter equipment kw/kg']
+
+        param.nom_dict['summer_feedbarge_power'] = np.array(summer_feedbarge_power.values)
+        param.nom_dict['summer_lighting_power_per_kg'] = np.array(summer_lighting_power_per_kg.values)
+        param.nom_dict['summer_equipment_power_per_kg'] = np.array(summer_equipment_power_per_kg.values)
+        param.nom_dict['winter_feedbarge_power'] = np.array(winter_feedbarge_power.values)
+        param.nom_dict['winter_lighting_power_per_kg'] = np.array(winter_lighting_power_per_kg.values)
+        param.nom_dict['winter_equipment_power_per_kg'] = np.array(winter_equipment_power_per_kg.values)
 
     #optimization
     res = {}

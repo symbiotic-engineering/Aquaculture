@@ -4,6 +4,9 @@ import numpy as np
 from scipy.integrate import quad
 from matplotlib import pyplot as plt
 from numba import njit
+import copy
+from scipy.optimize import minimize
+
 
 
 @njit
@@ -22,7 +25,7 @@ def cumsum_with_limits_nb(values, uplimit):
     return res
 
 class WEC:
-    def __init__(self, capture_width: Dict[str,float], 
+    def __init__(self, wave, capture_width: Dict[str,float], 
                 capture_width_ratio_dict: Dict[str,float], 
                 wave_damping_dict: Dict[str,float], 
                 wec_type: str,
@@ -31,6 +34,8 @@ class WEC:
                 CapEx_ref, OpEx_ref,
                 lifetime, discount_rate):
         
+        self.wave = wave
+
         self.capture_width = capture_width
         self.capture_width_ratio_dict = capture_width_ratio_dict
         self.wave_damping_dict = wave_damping_dict
@@ -75,7 +80,7 @@ class WEC:
         cost_NPV = self.CapEx
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV
+        return cost_NPV / 1000000 #[M$]
 
     @property
     def LCOE_base_RM3(self):
@@ -99,18 +104,21 @@ class WEC:
         capture_width_ratio = self.capture_width_ratio_dict[self.wec_type]
         return capture_width_ratio
     
-    def P_mechanical(self, wave_power):
-        P_mechanical = wave_power * self.capture_width * self.beta_wec
+    @property
+    def P_mechanical(self):
+        P_mechanical = self.wave.P_wave * self.capture_width * self.beta_wec
         return P_mechanical 
     
-    def P_electrical(self, wave):
-        P_electrical = self.eta * self.P_mechanical(wave.P_wave)
+    @property
+    def P_electrical(self):
+        P_electrical = self.eta * self.P_mechanical
         return P_electrical
 
     @property
     def wec_number(self):
         number = self.capture_width / (self.float_diameter * self.capture_width_ratio)
-        return np.ceil(number)
+        wec_number = np.ceil(number)
+        return number
 
     '''
     @property
@@ -329,7 +337,9 @@ class Pen:
                  temp, O2_in, U, salinity, permeability, bathymetry,
                  pos_lat, pos_long, pen_CapEx_ref, pen_OpEx_ref, feedbarge_CapEx_ref, feedbarge_OpEx_ref,
                  lifetime, discount_rate,
-                 FCR, feed_unit_cost, aqua_load, feedbarge_unit_capacity, feedbarge_unit_feedlines):
+                 FCR, feed_unit_cost, feedbarge_unit_capacity, feedbarge_unit_feedlines,
+                 summer_feedbarge_power, summer_lighting_power_per_kg, summer_equipment_power_per_kg,
+                 winter_feedbarge_power, winter_lighting_power_per_kg, winter_equipment_power_per_kg):
         self.fish = fish
 
         self.D = D 
@@ -368,7 +378,13 @@ class Pen:
         self.feed_unit_cost = feed_unit_cost
         
         self.TPF_O2 = 0
-        self.power_ref = aqua_load / 2544487  # kWh/kg
+
+        self.summer_feedbarge_power = summer_feedbarge_power
+        self.summer_lighting_power_per_kg = summer_lighting_power_per_kg
+        self.summer_equipment_power_per_kg = summer_equipment_power_per_kg
+        self.winter_feedbarge_power = winter_feedbarge_power
+        self.winter_lighting_power_per_kg = winter_lighting_power_per_kg
+        self.winter_equipment_power_per_kg = winter_equipment_power_per_kg
         
     @property 
     def volume(self):
@@ -385,21 +401,30 @@ class Pen:
         if ((self.fish_feed_harvest_week / self.pen_number) < (self.feedbarge_unit_capacity / self.feedbarge_unit_feedlines)):
             feedbarge_number = self.pen_number / self.feedbarge_unit_feedlines
         else:
-            feedbarge_number = np.ceil(self.fish_feed_harvest_week / self.feedbarge_unit_capacity)
+            #feedbarge_number = np.ceil(self.fish_feed_harvest_week / self.feedbarge_unit_capacity)
+            feedbarge_number = self.fish_feed_harvest_week / self.feedbarge_unit_capacity
         return feedbarge_number
     
     @property
-    def CapEx(self) -> float:
+    def CapEx_pen(self):
         CapEx_pen = self.pen_number * self.volume * self.pen_CapEx_ref
+        return CapEx_pen
+
+    @property
+    def CapEx_feedbarge(self):
         CapEx_feedbarge = self.feedbarge_number * self.feedbarge_CapEx_ref
-        CapEx = CapEx_pen + CapEx_feedbarge
+        return CapEx_feedbarge
+
+    @property
+    def CapEx(self):
+        CapEx = self.CapEx_pen + self.CapEx_feedbarge
         return CapEx
 
     @property
     def OpEx(self):
         pen_OpEx =  self.pen_number * self.volume * self.pen_OpEx_ref 
         feedbarge_OpEx = self.feedbarge_number * self.feedbarge_OpEx_ref 
-        OpEx = pen_OpEx + feedbarge_OpEx + self.fish_feed_price_annual + self.fingerling_price_annual # operational expense
+        OpEx = pen_OpEx + feedbarge_OpEx #+ self.fish_feed_price_annual + self.fingerling_price_annual # operational expense
         return OpEx
     
     @property
@@ -407,18 +432,48 @@ class Pen:
         cost_NPV = self.CapEx
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV
+        return cost_NPV / 1000000 #[M$]
+    
+    @property 
+    def power_summer(self):
+        power_summer = (self.summer_feedbarge_power * self.feedbarge_number) + (self.summer_lighting_power_per_kg * self.fish_yield) + (self.summer_equipment_power_per_kg * self.fish_yield)
+        return power_summer
+
+    @property 
+    def power_winter(self):
+        power_winter = (self.winter_feedbarge_power * self.feedbarge_number) + (self.winter_lighting_power_per_kg * self.fish_yield) + (self.winter_equipment_power_per_kg * self.fish_yield)
+        return power_winter
     
     @property 
     def power(self):
-        #power_annual = self.fish_yield * 0.572  # Annual Energy [kWh] (previously 50000 [W])
-        #power = (power_annual  / 8760) * np.ones(8760)
-        power = self.power_ref * self.fish_yield
+        summer_weight = np.zeros(365)
+        winter_weight = np.zeros(365)
+        power = []
+        season_length = 91
+        for i in range(365):
+            if (i < season_length): # winter
+                summer_weight[i] = 0
+            elif (i < 2*season_length): # spring
+                summer_weight[i] = min(summer_weight[i-1] + (1 / season_length), 1)
+            elif (i < 3*season_length): # summer
+                summer_weight[i] = 1
+            else: #fall
+                summer_weight[i] = max(summer_weight[i-1] - (1 / season_length) , 0)
+
+            winter_weight[i] = 1 - summer_weight[i]
+            
+            daily_power = summer_weight[i] * self.power_summer + winter_weight[i] * self.power_winter
+
+            power = np.append(power, daily_power)
+        noise= np.random.rand(8760)
+        #power = np.ones(8760) * (self.fish_yield / 1e5)
+        #power[2800:3900] = power[2800:3900] * 1.1
+        #power[6900:8000] = power[6900:8000] * 0.9
         return power
 
     @property
     def fingerling_price(self):
-        fingerling_price = self.fish_yield * self.fish.fingerling_weight / self.fish.harvest_weight / (1-self.fish.loss_rate) * self.fish.fingerling_unit_cost # [kg]
+        fingerling_price = self.fish_yield / self.fish.harvest_weight / (1-self.fish.loss_rate) * self.fish.fingerling_unit_cost 
         return fingerling_price
     
     @property
@@ -488,7 +543,7 @@ class Vessel:
         cost_NPV = 0
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV
+        return cost_NPV / 1000000 #[M$]
 
 class DieselGen:
     def __init__(self, fuel_consump_rate, fuel_cost, eta, load_level, CapEx_ref, OpEx_ref, lifetime, discount_rate):
@@ -535,6 +590,29 @@ class ES:
         self.P_diff = []
         self.size = []
         self.total_size = []
+        self.power = []
+    
+    # Objective function to minimize battery size
+    def sizing_objective(self, battery_size):
+        # Calculate the battery operation throughout the day
+        battery = battery_size * self.soc_uplimit  # Battery starts at full capacity
+        for diff in self.P_diff:
+            battery += diff  # Update battery capacity based on power difference
+            battery = min(max(battery, self.soc_downlimit * battery_size), self.soc_uplimit * battery_size)
+            # Ensure battery capacity stays within bounds
+        # The objective is to minimize battery size, so return the negative battery size
+        return -battery
+
+    def find_min_battery_size(self, initial_guess=1.0):
+        # Constraints: The battery size should be positive
+        constraints = [{'type': 'ineq', 'fun': lambda x: x}]
+
+        # Perform the optimization
+        result = minimize(self.sizing_objective, initial_guess, constraints=constraints)
+
+        # Extract the minimum required battery size from the result
+        min_battery_size = result.x[0]
+        return min_battery_size
 
     #Hourly Power for Energy Storage
     @property 
@@ -557,11 +635,16 @@ class ES:
     def sizing_func(self, P_diff):
         self.P_diff = P_diff
         self.size  = 0
-        self.total_size = abs(np.min(self.P_stored_cum)) / (self.soc_uplimit - self.soc_downlimit)
+        #self.total_size = abs(np.min(self.P_stored_cum)) / (self.soc_uplimit - self.soc_downlimit)
+        #self.total_size = self.find_min_battery_size(initial_guess = 30000)
+        self.total_size = 50000
+    
+        self.size = self.total_size
+        self.power = copy.deepcopy(self.P_stored_cum)
     
     @property
     def soc(self):
-        soc = self.P_stored_cum / self.total_size
+        soc = self.power / self.total_size
         return soc
 
     @property
@@ -579,12 +662,13 @@ class ES:
         cost_NPV = self.CapEx
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV
+        return cost_NPV / 1000000 #[M$]
     
     def plot_es(self):
-        self.size = self.total_size
-        plt.plot(self.P_stored_cum)
+        plt.plot(self.power)
         plt.axhline(y=self.total_size, color='r', linestyle='-')
+        plt.axhline(y=self.total_size * self.soc_uplimit, color='green', linestyle='dotted')
+        plt.axhline(y=self.total_size * self.soc_downlimit, color='green', linestyle='dotted')
         plt.axhline(y=0, color='r', linestyle='-')
         plt.ylabel('P_stored [W]')
         plt.xlabel('Time [h]')
@@ -592,7 +676,6 @@ class ES:
         plt.show()
     
     def plot_es_soc(self):
-        self.size = self.total_size
         plt.plot(self.soc * 100)
         plt.axhline(y=100, color='r', linestyle='-')
         plt.axhline(y=0, color='r', linestyle='-')
