@@ -111,7 +111,7 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
         cons.append(l)
         cons.append(u)
 
-    options={"maxiter":max_iter} #, 'eps': .5}  # "ftol": 1e-4
+    options={"maxiter":max_iter} #, 'eps': .5}  # "ftol": 1e-4 #, 'disp': True
     
     
     res = minimize(obj_fun, op_obj.x0, 
@@ -121,5 +121,8 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
                    constraints=cons,
                    options=options,
                    callback=partial(cb, obj=op_obj))
+    
+    if res.success:
+        cb(res.x, op_obj)
     
     return res, op_obj, p

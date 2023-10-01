@@ -276,22 +276,21 @@ class Fish:
         return OCR
 
     def plot_variable(self):
-        fig, ax = plt.subplots(3,1, figsize=(12, 8))
-        ax1 = plt.subplot(3,1,1)
+        fig, axes = plt.subplots(3,1, figsize=(12, 8))
+
+        ax1 = axes[0]
         ax1.plot(self.time_i, self.W_i/1000)
         ax1.set(xlabel='time [day]', ylabel='Fish weight (W [kg])');
         #ax1.legend()
         ax1.grid(True)
         ax1.set_xlim(0, None)
-        plt.show()
         
-        ax2 = plt.subplot(3,1,2)
+        ax2 = axes[1]
         ax2.plot(self.time_i, self.DO2_i)
         ax2.set(xlabel='time [day]', ylabel='DO2 [g/day]');
         #ax2.legend()
         ax2.grid(True)
         ax2.set_xlim(0, None)
-        plt.show()
 
         ref_DO2 = np.full(shape=(len(self.DO2_i),), fill_value=np.NaN)
         W_i_50g = next(x[0] for x in enumerate(self.W_i) if x[1] > 50)
@@ -320,7 +319,7 @@ class Fish:
         
         print('fish weight after 365 days',self.W_i[-1])        
         
-        ax3 = plt.subplot(3,1,3)
+        ax3 = axes[2]
         ax3.plot(self.W_i/1000,  np.cumsum(self.DO2_i), 'b' , label='Total DO2')
 
         ax3.plot(self.W_i/1000,  ref_DO2, 'r-o', label='Ref Total DO2')
@@ -329,8 +328,10 @@ class Fish:
         ax3.grid(True)
         ax3.set_xlim(0, None)
 
-        plt.subplots_adjust(hspace=0.3)
+        #plt.subplots_adjust(hspace=0.3)
+        plt.tight_layout()
         plt.show()
+        return
         
 class Pen:
     def __init__(self, fish, D, H, Depth, SD, pen_number, spacing, 
@@ -465,7 +466,7 @@ class Pen:
             daily_power = summer_weight[i] * self.power_summer + winter_weight[i] * self.power_winter
 
             power = np.append(power, daily_power)
-        noise= np.random.rand(8760)
+        #noise= np.random.rand(8760)
         #power = np.ones(8760) * (self.fish_yield / 1e5)
         #power[2800:3900] = power[2800:3900] * 1.1
         #power[6900:8000] = power[6900:8000] * 0.9
@@ -592,27 +593,31 @@ class ES:
         self.total_size = []
         self.power = []
     
-    # Objective function to minimize battery size
-    def sizing_objective(self, battery_size):
-        # Calculate the battery operation throughout the day
-        battery = battery_size * self.soc_uplimit  # Battery starts at full capacity
-        for diff in self.P_diff:
-            battery += diff  # Update battery capacity based on power difference
-            battery = min(max(battery, self.soc_downlimit * battery_size), self.soc_uplimit * battery_size)
-            # Ensure battery capacity stays within bounds
-        # The objective is to minimize battery size, so return the negative battery size
-        return -battery
+    # # Objective function to minimize battery size
+    # def sizing_objective(self, battery_size):
+    #     # Calculate the battery operation throughout the day
+    #     battery = battery_size * self.soc_uplimit  # Battery starts at full capacity
+    #     for diff in self.P_diff:
+    #         battery += diff  # Update battery capacity based on power difference
+    #         battery = min(max(battery, self.soc_downlimit * battery_size), self.soc_uplimit * battery_size)
+    #         # Ensure battery capacity stays within bounds
+    #     # The objective is to minimize battery size, so return the negative battery size
+    #     return battery
 
-    def find_min_battery_size(self, initial_guess=1.0):
-        # Constraints: The battery size should be positive
-        constraints = [{'type': 'ineq', 'fun': lambda x: x}]
+    # def find_min_battery_size(self, initial_guess=1.0):
+    #     # Constraints: The battery size should be positive
+    #     constraints = [{'type': 'ineq', 'fun': lambda x: x}]
 
-        # Perform the optimization
-        result = minimize(self.sizing_objective, initial_guess, constraints=constraints)
+    #     # Perform the optimization
+    #     result = minimize(self.sizing_objective, initial_guess, constraints=constraints)
 
-        # Extract the minimum required battery size from the result
-        min_battery_size = result.x[0]
-        return min_battery_size
+    #     # Extract the minimum required battery size from the result
+    #     if result.success:
+    #         min_battery_size = result.x[0]
+    #     else:
+    #         print("failed to size the required battery")
+    #         min_battery_size = initial_guess
+    #     return min_battery_size
 
     #Hourly Power for Energy Storage
     @property 
@@ -635,9 +640,9 @@ class ES:
     def sizing_func(self, P_diff):
         self.P_diff = P_diff
         self.size  = 0
-        #self.total_size = abs(np.min(self.P_stored_cum)) / (self.soc_uplimit - self.soc_downlimit)
-        #self.total_size = self.find_min_battery_size(initial_guess = 30000)
-        self.total_size = 50000
+        self.total_size = abs(np.min(self.P_stored_cum)) / (self.soc_uplimit - self.soc_downlimit)
+        #self.total_size = self.find_min_battery_size(initial_guess = 20000)
+        #print(self.total_size)
     
         self.size = self.total_size
         self.power = copy.deepcopy(self.P_stored_cum)

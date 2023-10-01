@@ -59,9 +59,9 @@ def wpaf_opt(all_vars, *args):
         df = pd.read_csv(args[0]['wave_data'], skiprows=2)
         wave_period = df['Energy Period']
         wave_height = df['Significant Wave Height']
-        noise= np.random.rand(8760)
-        vec = 1.37 * np.ones(8760)
-        vec[1000:1100] = 1.2
+        # noise= np.random.rand(8760)
+        # vec = 1.37 * np.ones(8760)
+        # vec[1000:1100] = 1.2
         param.nom_dict['wave_height'] = np.array(wave_period.values) #vec + noise/10  #
         param.nom_dict['wave_energy_period'] = np.array(wave_height.values)  #6.44 * np.ones(8760) #
 
@@ -100,7 +100,7 @@ def wpaf_opt(all_vars, *args):
                 if 'x_wave_ave' in all_vars:
                     param.nom_dict['es_size'] = 0                    
 
-                print('optimization is running ...')
+                #print('optimization is running ...')
                 res, op_obj, p = optimization.run_optimization(x.name, x.nom0, param.name, param.nom_dict, all_vars, max_iter)
 
                 if init_flag:

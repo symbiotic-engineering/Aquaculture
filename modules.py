@@ -29,9 +29,9 @@ def eq_constraint(x_in, x_name, p_in):
 def obj_terms(x_in, x_name, p_in):
     aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
     if aqua_obj.valid_point: 
-        return np.array([aqua_obj.cost_per_yield, aqua_obj.cost_NPV, aqua_obj.pen.fish_yield, aqua_obj.es.total_size]) #, aqua_obj.pen.cost_NPV, aqua_obj.wec.price
+        return np.array([aqua_obj.obj_func, aqua_obj.cost_per_yield, aqua_obj.cost_NPV, aqua_obj.pen.fish_yield, aqua_obj.es.total_size]) #, aqua_obj.pen.cost_NPV, aqua_obj.wec.price
     else:
-        return np.array([-1, -1, -1, -1, -1])
+        return np.array([-1, -1, -1, -1, -1, -1])
 
 class Aqua_Obj(object):
     def __init__(self, x0, x_name, p):
@@ -56,7 +56,7 @@ class Aqua_Obj(object):
             self.cost_per_yield = self.cost_NPV / (self.pen.fish_yield / 1000000)
 
             # power supply constraint to ensure supply power demand of net pen
-            self.P_gen_cons = min((self.wec.P_gen + self.es.power - self.pen.power) / self.wec.P_gen)
+            self.P_gen_cons = 1# min((self.wec.P_gen + self.es.power - self.pen.power) / self.wec.P_gen)
 
             # fish yield constraint to ensure a healthy offshore environment
             self.fish_yield_cons = (self.pen.carrying_capacity - self.pen.fish_yield) / self.pen.carrying_capacity
@@ -111,7 +111,7 @@ class Aqua_Obj(object):
         return self.wec.P_electrical
     
     def plot_variable(self):
-        self.fish.plot_variable
+        self.fish.plot_variable()
         return
     
     def carrying_capacity_print(self):
@@ -525,7 +525,7 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 50)      #[m] (1, 50)
+        bnds['capture_width'] = (1, 40)      #[m] (1, 50)
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 45)      #[m]  (10, 45)
@@ -533,7 +533,7 @@ def bnds_values(var_category_names):
         bnds['stock_density'] = (10, 20)     #[kg/m^3]  (10, 20)
     
     if any('x_disc_pen' in i for i in var_category_names):
-        bnds['num_pens'] = (5, 12)         #[-] (5, 40)
+        bnds['num_pens'] = (5, 40)         #[-] (5, 40)
 
     if any('pos_env' in i for i in var_category_names):
         bnds['pos_lat'] = (38.4, 45.2)        #[m]
