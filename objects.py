@@ -32,7 +32,7 @@ class WEC:
                 capacity_factor,
                 eta, float_diameter,
                 CapEx_ref, OpEx_ref,
-                lifetime, discount_rate):
+                lifetime, discount_rate, P_wec_rated):
         
         self.wave = wave
 
@@ -48,6 +48,7 @@ class WEC:
         self.OpEx_ref = OpEx_ref
         self.lifetime = lifetime
         self.discount_rate = discount_rate
+        self.P_wec_rated = P_wec_rated
 
         self.P_gen = []
         
@@ -80,7 +81,7 @@ class WEC:
         cost_NPV = self.CapEx
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV / 1000000 #[M$]
+        return cost_NPV #/ 1000000 #[M$]
 
     @property
     def LCOE_base_RM3(self):
@@ -111,7 +112,7 @@ class WEC:
     
     @property
     def P_electrical(self):
-        P_electrical = self.eta * self.P_mechanical
+        P_electrical = np.clip(self.eta * self.P_mechanical, 0, self.wec_number * self.P_wec_rated)
         return P_electrical
 
     @property
@@ -425,7 +426,7 @@ class Pen:
     def OpEx(self):
         pen_OpEx =  self.pen_number * self.volume * self.pen_OpEx_ref 
         feedbarge_OpEx = self.feedbarge_number * self.feedbarge_OpEx_ref 
-        OpEx = pen_OpEx + feedbarge_OpEx #+ self.fish_feed_price_annual + self.fingerling_price_annual # operational expense
+        OpEx = pen_OpEx + feedbarge_OpEx + self.fish_feed_price_annual + self.fingerling_price_annual # operational expense
         return OpEx
     
     @property
@@ -433,7 +434,7 @@ class Pen:
         cost_NPV = self.CapEx
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV / 1000000 #[M$]
+        return cost_NPV #/ 1000000 #[M$]
     
     @property 
     def power_summer(self):
@@ -544,7 +545,7 @@ class Vessel:
         cost_NPV = 0
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV / 1000000 #[M$]
+        return cost_NPV #/ 1000000 #[M$]
 
 class DieselGen:
     def __init__(self, fuel_consump_rate, fuel_cost, eta, load_level, CapEx_ref, OpEx_ref, lifetime, discount_rate):
@@ -667,7 +668,7 @@ class ES:
         cost_NPV = self.CapEx
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
-        return cost_NPV / 1000000 #[M$]
+        return cost_NPV #/ 1000000 #[M$]
     
     def plot_es(self):
         plt.plot(self.power)

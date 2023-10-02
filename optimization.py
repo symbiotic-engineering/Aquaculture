@@ -111,7 +111,7 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
         cons.append(l)
         cons.append(u)
 
-    options={"maxiter":max_iter} #, 'eps': .5}  # "ftol": 1e-4 #, 'disp': True
+    options={"maxiter":max_iter, "ftol": 1e-8} #, 'eps': .5}  # "ftol": 1e-4 #, 'disp': True
     
     
     res = minimize(obj_fun, op_obj.x0, 

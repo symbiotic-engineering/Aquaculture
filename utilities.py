@@ -9,8 +9,9 @@ def print_bold(str):
 def print_objective(title, aqua_obj):
     print_bold(title+" objective function terms:")
     print(' '*2, "Objective_func", "{:10.3f}".format(aqua_obj.obj_func))
-    print(' '*2, "NPV           ", "{:10.3f}".format(aqua_obj.cost_NPV), '[$]')
-    print(' '*2, "fish_yield    ", "{:10.3f}".format(aqua_obj.pen.fish_yield), '[kg]')
+    print(' '*2, "cost per yield", "{:10.3f}".format(aqua_obj.cost_per_yield), '[Million $ / Tonne]')
+    print(' '*2, "NPV           ", "{:10.3f}".format(aqua_obj.cost_NPV / 1000000), '[Million $]')
+    print(' '*2, "fish yield    ", "{:10.3f}".format(aqua_obj.pen.fish_yield / 1000000), '[Tonne]')
     print("-"*40)
 
 def print_P_rated(title, aqua_obj):
@@ -29,24 +30,24 @@ def print_carrying_capacity(title, aqua_obj):
 
 def print_price_breakdown(title, aqua_obj):
     print_bold(title+" price break down:")
-    print(' '*2, "wec NPV             ", "{:10.3f}".format(aqua_obj.wec.cost_NPV), '[$]', "{:2.1f}".format(100*aqua_obj.wec.cost_NPV/aqua_obj.cost_NPV), '[%]')
-    print(' '*2, "wec CapEx           ", "{:10.3f}".format(aqua_obj.wec.CapEx), '[$]')
-    print(' '*2, "wec OpEx            ", "{:10.3f}".format(aqua_obj.wec.OpEx), '[$]')
+    print(' '*2, "wec NPV             ", "{:10.3f}".format(aqua_obj.wec.cost_NPV / 1000000), '[Million $]', "{:2.1f}".format(100*aqua_obj.wec.cost_NPV/aqua_obj.cost_NPV), '[%]')
+    print(' '*2, "wec CapEx           ", "{:10.3f}".format(aqua_obj.wec.CapEx / 1000000), '[Million $]')
+    print(' '*2, "wec OpEx            ", "{:10.3f}".format(aqua_obj.wec.OpEx / 1000000), '[Million $]')
 
-    print(' '*2, "Aqua NPV            ", "{:10.3f}".format(aqua_obj.pen.cost_NPV), '[$]', "{:2.1f}".format(100*aqua_obj.pen.cost_NPV/aqua_obj.cost_NPV), '[%]')
-    print(' '*2, "Net Pen CapEx       ", "{:10.3f}".format(aqua_obj.pen.CapEx_pen), '[$]')
-    print(' '*2, "Feedbarge CapEx     ", "{:10.3f}".format(aqua_obj.pen.CapEx_feedbarge), '[$]')
+    print(' '*2, "Aqua NPV            ", "{:10.3f}".format(aqua_obj.pen.cost_NPV / 1000000), '[Million $]', "{:2.1f}".format(100*aqua_obj.pen.cost_NPV/aqua_obj.cost_NPV), '[%]')
+    print(' '*2, "Net Pen CapEx       ", "{:10.3f}".format(aqua_obj.pen.CapEx_pen / 1000000), '[Million $]')
+    print(' '*2, "Feedbarge CapEx     ", "{:10.3f}".format(aqua_obj.pen.CapEx_feedbarge / 1000000), '[Million $]')
 
-    print(' '*2, "fish feed OpEx      ", "{:10.3f}".format(aqua_obj.pen.fish_feed_price_annual), '[$]')
-    print(' '*2, "fingerling OpEx     ", "{:10.3f}".format(aqua_obj.pen.fingerling_price_annual), '[$]')
+    print(' '*2, "fish feed OpEx      ", "{:10.3f}".format(aqua_obj.pen.fish_feed_price_annual / 1000000), '[Million $]')
+    print(' '*2, "fingerling OpEx     ", "{:10.3f}".format(aqua_obj.pen.fingerling_price_annual / 1000000), '[Million $]')
 
-    print(' '*2, "vessel travel NPV   ", "{:10.3f}".format(aqua_obj.vessel.cost_NPV), '[$]', "{:2.1f}".format(100*aqua_obj.vessel.cost_NPV/aqua_obj.cost_NPV), '[%]')
+    print(' '*2, "vessel travel NPV   ", "{:10.3f}".format(aqua_obj.vessel.cost_NPV / 1000000), '[Million $]', "{:2.1f}".format(100*aqua_obj.vessel.cost_NPV/aqua_obj.cost_NPV), '[%]')
 
-    print(' '*2, "energy storage NPV  ", "{:10.3f}".format(aqua_obj.es.cost_NPV), '[$]', "{:2.1f}".format(100*aqua_obj.es.cost_NPV/aqua_obj.cost_NPV), '[%]')
+    print(' '*2, "energy storage NPV  ", "{:10.3f}".format(aqua_obj.es.cost_NPV / 1000000), '[Million $]', "{:2.1f}".format(100*aqua_obj.es.cost_NPV/aqua_obj.cost_NPV), '[%]')
 
-    print(' '*2, "diesel gen NPV      ", "{:10.3f}".format(aqua_obj.dieselgen.cost_NPV), '[$]', "{:2.1f}".format(100*aqua_obj.dieselgen.cost_NPV/aqua_obj.cost_NPV), '[%]')
-    print(' '*2, "diesel gen CapEx    ", "{:10.3f}".format(aqua_obj.dieselgen.CapEx), '[$]')
-    print(' '*2, "diesel OpEx         ", "{:10.3f}".format(aqua_obj.dieselgen.OpEx), '[$]')
+    print(' '*2, "diesel gen NPV      ", "{:10.3f}".format(aqua_obj.dieselgen.cost_NPV / 1000000), '[Million $]') #, "{:2.1f}".format(100*aqua_obj.dieselgen.cost_NPV/aqua_obj.cost_NPV), '[%]')
+    print(' '*2, "diesel gen CapEx    ", "{:10.3f}".format(aqua_obj.dieselgen.CapEx / 1000000), '[Million $]')
+    print(' '*2, "diesel OpEx         ", "{:10.3f}".format(aqua_obj.dieselgen.OpEx / 1000000), '[Million $]')
     print("-"*40)
     
 def print_ineq_cons(title,aqua_obj):

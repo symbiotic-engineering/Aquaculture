@@ -53,7 +53,7 @@ class Aqua_Obj(object):
             self.es.sizing_func(self.wec.P_gen - self.pen.power)
 
             #self.carrying_capacity = self.pen.carrying_capacity(self.fish)
-            self.cost_per_yield = self.cost_NPV / (self.pen.fish_yield / 1000000)
+            self.cost_per_yield = self.cost_NPV / (self.pen.fish_yield )# / 1000000)
 
             # power supply constraint to ensure supply power demand of net pen
             self.P_gen_cons = 1# min((self.wec.P_gen + self.es.power - self.pen.power) / self.wec.P_gen)
@@ -223,7 +223,7 @@ def input_merge(x_in, x_name, p):
     wec = WEC(wave_in, ins['capture_width'], ins['capture_width_ratio_dict'],
             ins['wave_damping_dict'], ins['wec_type'],
             ins['capacity_factor'], ins['eta'], ins['float_diameter'],
-            ins['wec_CapEx_ref'], ins['wec_OpEx_ref'], ins['lifetime'], ins['discount_rate'])
+            ins['wec_CapEx_ref'], ins['wec_OpEx_ref'], ins['lifetime'], ins['discount_rate'], ins['P_wec_rated'])
 
     fish = Fish(ins['F_f'], ins['F_p'], ins['F_c'], ins['A_f'], ins['A_p'], ins['A_c'],
                 ins['O_f'], ins['O_p'], ins['O_c'], ins['C_f'], ins['C_p'], ins['C_c'],
@@ -324,6 +324,7 @@ def variable_lookup(var_category_names):
         var_list.append('wec_OpEx_ref')
         var_list.append('lifetime')
         var_list.append('discount_rate')
+        var_list.append('P_wec_rated')
     
     if any('p_fish' in i for i in var_category_names):
         var_list.append('F_f')             #Fraction of Fat in the Feed Mix [-]
@@ -460,6 +461,7 @@ def default_values(var_category_names):
         vals['wec_OpEx_ref'] = (123477, '[$]')   #cost in 2023
         vals['lifetime'] = (20, '[year]')
         vals['discount_rate'] = (0.07, '[-]')
+        vals['P_wec_rated'] = (300, '[kW]')
         
     if any('p_fish_salmon' in i for i in var_category_names):
         vals['F_f'] = (0.15, '[-]')                     #Fraction of Fat in the Feed Mix [-]
