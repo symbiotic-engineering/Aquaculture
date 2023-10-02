@@ -99,8 +99,6 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
     else:
         x0 = x_vals
     
-    print("SINGLE: x0 = ", x0)
-    
     # fill default parameters
     p = argument_fun(x.name, p_name, p_vals, all_vars)
         
@@ -130,8 +128,6 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
                    options=options,
                    callback=partial(cb, obj=op_obj))
     
-    print("SINGLE: res = ", res)
-    
     return res, op_obj, p
 
 # ============================================================================ #
@@ -147,6 +143,19 @@ from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.termination import get_termination
 from pymoo.optimize import minimize as min
 
+# Case 1: Original -> eps and indicator = -
+# Case 2: Change the xl and xu to the optimal SOO result -> eps and indicator = -
+# and WARNING: Mating could not produce the required number of (unique) offsprings
+# Case 3: Case 2 + deleting all of the constraints -> eps and indicator returned values
+# and optimal design variables are returned, but objective function value differed
+# and same warning message as Case 2.  
+# Case 4: Increased the range of the design variables by 10 in both directions 
+# and added back the constraints -> eps and indicator = -
+# Case 5: Increased the range of the design variables by 10 and deleted the 
+# constraints -> eps and indicator = -
+# Case 6: Increased the range of the design variables by 5 and deleted the 
+# constraints -> different design variable values from optimal SOO results but 
+# objective function value was much closer to the SOO result
 class MyProblem(ElementwiseProblem):
     
     # Problem definition of the multi-objective optimization
@@ -160,14 +169,38 @@ class MyProblem(ElementwiseProblem):
         xl = np.zeros(n_var)
         xu = np.zeros(n_var)
         
+        """
         for i in range(len(x.bnds)):
             lower, upper = x.bnds[i]
             xl[i] = lower
             xu[i] = upper
+        """
+        
+        """
+        # Optimal results from SOO
+        xl[0] = 48
+        xu[0] = 48
+        xl[1] = 20.569
+        xu[1] = 20.569
+        xl[2] = 14.410
+        xu[2] = 14.410
+        xl[3] = 18.199
+        xu[3] = 18.199
+        """
+        
+        # Adjusted version
+        xl[0] = 43
+        xu[0] = 53
+        xl[1] = 15.569
+        xu[1] = 25.569
+        xl[2] = 9.410
+        xu[2] = 19.410
+        xl[3] = 13.199
+        xu[3] = 23.199
             
         super().__init__(n_var=n_var,
-                         n_obj=2,
-                         n_ieq_constr=12,
+                         n_obj=1,
+                         n_ieq_constr=0,
                          xl=xl,
                          xu=xu)
         
@@ -184,13 +217,18 @@ class MyProblem(ElementwiseProblem):
         
         op_obj = OpObj(x0, x_name, p.nom_dict, self.max_iter)
         
-        f1 = (op_obj.multi_obj_fun(x))[0]
-        f2 = (op_obj.multi_obj_fun(x))[1]
-
-        gi = [modules.ineq_constraint(x, x_name, p.nom_dict)[i] for i in range(12)]
+        f1 = op_obj.obj_fun(x)
         
-        out["F"] = [f1, f2]
-        out["G"] = gi
+        # Testing with single objective optimization funciton 
+        #f1 = (op_obj.multi_obj_fun(x))[0]
+        #f2 = (op_obj.multi_obj_fun(x))[1]
+        
+        #gi = [modules.ineq_constraint(x, x_name, p.nom_dict)[i] for i in range(12)]
+        
+        out["F"] = [f1]
+        
+        # Testing with single objective optimization funciton 
+        #out["G"] = gi
         
 
 # Separate function to run the multi-objective optimization itself
