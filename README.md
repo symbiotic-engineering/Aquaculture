@@ -1,37 +1,25 @@
-# Aquaculture
-This repository contains an "Marine spatial planning of offshore aquaculture with co-located wave energy", simulated through Python.
+# Website Design
+This repository contains the website design for an interactive website for our Marine spatial planning (MSP) tool.
 
 ## File Structure
 This repository consists of the following files:
-- modules: scripts and functions to define "Wave-powered Aquaculture" optimization problem.
-- objects: scripts and functions to define aquaculture and wave energy converter objects and their parameters.
-- optimization: scripts and functions to perform a single objective optimization using brute-force.
-- env_bruteforce: script to perform brute-force for defined net pen parmeters.
-- run_sim_env: top-level script to perform the "marine spatial planning" optimization code using default values for defined environment with rasters and vectors of data.
-- gis/gis_handler: object to handle connection between GIS data and Python functions
-- gis/gis_example: examples of how to use the GIS handler to query and save data
-- gis/data: GIS files used in analysis including conflicts (.geojson) and conditions (.tif)
-- requirements.txt: list of the required libraries.
+- index: script to run main website file
+- leaflet: scripts and function to produce this website using leaflet
+- qgis2web: scripts and functions to import QGIS functions into the website
 
 ## How to use
-In order to run the "Marine spatial planning" optimization code and find optimal location for wave-powered aquaculture farm (WPAF) for constant net pen within the Northeast U.S., you can open and run the run_sim_env (.ipynb) file. *Note:* because geospatial data files are uploaded using git lfs, you must clone the repository or download them individually instead of downloading the repository as a zip.
-
-## Dependencies
-Python 3.8.8 is used to develop this package. 
-For other required libraries, please refer to requirements.txt file.
+The index.html file is the main file and the only one that needs to be run. Open and run the index.html file. It will call on the other files to be used.
 
 ## Context
-The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab and has been submitted to the Oceans 2023.
+The project is a part of the research in the Symbiotic Engineering Analysis (SEA) Lab.
 
 ## Authors
-- Arezoo Hasankhani, ah844@cornell.edu (Point of contact)
-- Gabriel Ewig, gre27@cornell.edu
-- Rebecca McCabe, rgm222@cornell.edu 
-- Eugene Thome Won, etw36@cornell.edu
+- Karen Lei, yl2253@cornell.edu (Point of contact)
+- Arezoo Hasankhani, ah844@cornell.edu
 - Maha Haji, maha@cornell.edu
 
 ## Funding Acknowledgement
 This material is based upon work supported by the Sea Grant Regional Research Project No.: R/ATD-18-NESG.
 
 ## License
-This project is released open-source under the MIT License. Processed GIS data included in the repository is from publicly available sources, but may have different license terms.
+This project is released open-source under the MIT License
