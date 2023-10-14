@@ -82,7 +82,7 @@ class Aqua_Obj(object):
     
     @property
     def ineq_constraint(self):
-        return [self.P_gen_cons, 
+        return [#self.P_gen_cons, 
                 self.fish_yield_cons, 
                 # self.env_Umin_cons, self.env_Umax_cons,
                 # self.env_tempmin_cons, self.env_tempmax_cons, 
@@ -491,7 +491,7 @@ def default_values(var_category_names):
         vals['FCR'] = (1.35,'[kgFeed/kgFish]')          #Feed Conversion Ratio [kgFeed/kgFish]
         vals['feed_unit_cost'] = (1.54,'[$/kgFeed]')   #[$/kgFeed]
         vals['fish_life_cycle'] = (365,'[day]')        #[day]  TODO: update the value #700
-        vals['fingerling_weight'] = (.100,'[kg]')      # [kg]
+        vals['fingerling_weight'] = (.200,'[kg]')      # [kg] previously 0.1 kg
         vals['fingerling_unit_cost'] = (2.5,'[$/smolt]')    # cost per each smolt between 85 gr to 150 gr.
     
     if any('p_vessel' in i for i in var_category_names):

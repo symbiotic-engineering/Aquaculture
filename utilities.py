@@ -9,9 +9,9 @@ def print_bold(str):
 def print_objective(title, aqua_obj):
     print_bold(title+" objective function terms:")
     print(' '*2, "Objective_func", "{:10.3f}".format(aqua_obj.obj_func))
-    print(' '*2, "cost per yield", "{:10.3f}".format(aqua_obj.cost_per_yield), '[Million $ / Tonne]')
+    print(' '*2, "cost per yield", "{:10.3f}".format(aqua_obj.cost_per_yield), '[Million $ / kilo Tonne]')
     print(' '*2, "NPV           ", "{:10.3f}".format(aqua_obj.cost_NPV / 1000000), '[Million $]')
-    print(' '*2, "fish yield    ", "{:10.3f}".format(aqua_obj.pen.fish_yield / 1000000), '[Tonne]')
+    print(' '*2, "fish yield    ", "{:10.3f}".format(aqua_obj.pen.fish_yield / 1000000), '[kilo Tonne]')
     print("-"*40)
 
 def print_P_rated(title, aqua_obj):
@@ -52,7 +52,7 @@ def print_price_breakdown(title, aqua_obj):
     
 def print_ineq_cons(title,aqua_obj):
     print_bold(title+" constraints:")
-    print(' '*2, "normalized P_gen_cons              ", "{:10.3f}".format(aqua_obj.P_gen_cons), '[-]')
+    #print(' '*2, "normalized P_gen_cons              ", "{:10.3f}".format(aqua_obj.P_gen_cons), '[-]')
     print(' '*2, "normalized fish_yield_cons         ", "{:10.3f}".format(aqua_obj.fish_yield_cons), '[-]')
     print(' '*2, "normalized pen_ratio_low_cons      ", "{:10.3f}".format(aqua_obj.pen_ratio_low_cons), '[-]')
     print(' '*2, "normalized pen_ratio_up_cons       ", "{:10.3f}".format(aqua_obj.pen_ratio_up_cons), '[-]')
