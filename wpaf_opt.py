@@ -118,7 +118,7 @@ def wpaf_multi_opt(all_vars, *args):
                 
                 print('multi optimization is running ...')
     
-    des_var, op_obj = optimization.run_multi_optimization(x.name, param.name, param.nom_dict, all_vars, max_iter)
+                des_var, op_obj = optimization.run_multi_optimization(x.name, param.name, param.nom_dict, all_vars, max_iter)
                 
     result.append((des_var, op_obj))
     

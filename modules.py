@@ -93,11 +93,13 @@ class Aqua_Obj(object):
     
     @property
     def ineq_constraint(self):
-        return [self.fish_yield_cons , self.env_Umin_cons, self.env_Umax_cons,
-                self.env_tempmin_cons, self.env_tempmax_cons, 
-                self.env_salinitymin_cons, self.env_salinitymax_cons, 
-                self.env_O2_min_cons, self.env_bathymetry_min_cons, self.env_bathymetry_max_cons,
-                self.pen_ratio_low_cons, self.pen_ratio_up_cons]
+        return [self.fish_yield_cons, 
+                # self.env_Umin_cons, self.env_Umax_cons,
+                # self.env_tempmin_cons, self.env_tempmax_cons, 
+                # self.env_salinitymin_cons, self.env_salinitymax_cons, 
+                # self.env_O2_min_cons, self.env_bathymetry_min_cons, self.env_bathymetry_max_cons,
+                self.pen_ratio_low_cons, self.pen_ratio_up_cons
+                ]
 
     @property
     def cost_NPV(self): #net present value
@@ -462,7 +464,7 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 50)      #[m]
+        bnds['capture_width'] = (1, 40)      #[m]
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 45)      #[m]  

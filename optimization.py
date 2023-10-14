@@ -135,6 +135,7 @@ def run_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
 # ============================================================================ #
 
 import numpy as np
+import autograd.numpy as anp
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.sbx import SBX
@@ -156,7 +157,7 @@ from pymoo.optimize import minimize as min
 # Case 6: Increased the range of the design variables by 5 and deleted the 
 # constraints -> different design variable values from optimal SOO results but 
 # objective function value was much closer to the SOO result
-class MyProblem(ElementwiseProblem):
+class mooProblem(ElementwiseProblem):
     
     # Problem definition of the multi-objective optimization
     def __init__(self, x_name, p_name, p_vals, all_vars, max_iter):
@@ -164,43 +165,24 @@ class MyProblem(ElementwiseProblem):
         x = OpData(x_name)
         p = argument_fun(x.name, p_name, p_vals, all_vars)
         
-        n_var = len(x.list)
+        self.n_var = len(x.list)
+        self.n_ieq_constr = len(modules.ineq_constraint(x.nom0, x.name, p.nom_dict))
 
-        xl = np.zeros(n_var)
-        xu = np.zeros(n_var)
+        xl = np.zeros(self.n_var)
+        xu = np.zeros(self.n_var)
         
-        """
+    
         for i in range(len(x.bnds)):
             lower, upper = x.bnds[i]
             xl[i] = lower
             xu[i] = upper
-        """
-        
-        """
-        # Optimal results from SOO
-        xl[0] = 48
-        xu[0] = 48
-        xl[1] = 20.569
-        xu[1] = 20.569
-        xl[2] = 14.410
-        xu[2] = 14.410
-        xl[3] = 18.199
-        xu[3] = 18.199
-        """
-        
-        # Adjusted version
-        xl[0] = 43
-        xu[0] = 53
-        xl[1] = 15.569
-        xu[1] = 25.569
-        xl[2] = 9.410
-        xu[2] = 19.410
-        xl[3] = 13.199
-        xu[3] = 23.199
+    
+        xl = anp.array(xl)
+        xu = anp.array(xu)
             
-        super().__init__(n_var=n_var,
+        super().__init__(n_var=self.n_var,
                          n_obj=1,
-                         n_ieq_constr=0,
+                         n_ieq_constr=self.n_ieq_constr,
                          xl=xl,
                          xu=xu)
         
@@ -214,8 +196,8 @@ class MyProblem(ElementwiseProblem):
         x_name = self.x.name
         p = self.parameters
         x0 = self.x.nom0
-        
-        op_obj = OpObj(x0, x_name, p.nom_dict, self.max_iter)
+
+        op_obj = OpObj(x, x_name, p.nom_dict, self.max_iter)
         
         f1 = op_obj.obj_fun(x)
         
@@ -223,27 +205,32 @@ class MyProblem(ElementwiseProblem):
         #f1 = (op_obj.multi_obj_fun(x))[0]
         #f2 = (op_obj.multi_obj_fun(x))[1]
         
-        #gi = [modules.ineq_constraint(x, x_name, p.nom_dict)[i] for i in range(12)]
+        g = modules.ineq_constraint(x, x_name, p.nom_dict)
+
+        f = anp.column_stack([f1])
+        g = anp.column_stack(-g)
+
+        # print('x', x)
+        # print('f', f)
+        # print('g', g)
         
-        out["F"] = [f1]
-        
-        # Testing with single objective optimization funciton 
-        #out["G"] = gi
+        out["F"] = f
+        out["G"] = g
         
 
 # Separate function to run the multi-objective optimization itself
 def run_multi_optimization(x_name, p_name, p_vals, all_vars, max_iter):
     
-    problem = MyProblem(x_name, p_name, p_vals, all_vars, max_iter)
+    problem = mooProblem(x_name, p_name, p_vals, all_vars, max_iter)
     
-    algorithm = NSGA2(pop_size=50,
+    algorithm = NSGA2(pop_size=100,
                       n_offsprings=10,
                       sampling=FloatRandomSampling(),
                       crossover=SBX(prob=0.9, eta=15),
                       mutation=PM(eta=20),
                       eliminate_duplicates=True)
 
-    termination = get_termination("n_gen", 10)
+    termination = get_termination("n_gen", 100)
     
     res = min(problem,
               algorithm,
