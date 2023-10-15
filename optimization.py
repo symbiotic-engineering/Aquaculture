@@ -203,7 +203,7 @@ def run_moo_optimization(n_obj, x_name, p_name, p_vals, all_vars, max_iter):
     problem = mooProblem(n_obj, x_name, p_name, p_vals, all_vars, max_iter)
     
     algorithm = NSGA2(pop_size=100,       #50
-                      n_offsprings=20,   #10
+                      n_offsprings=30,   #10
                       sampling=FloatRandomSampling(),
                       crossover=SBX(prob=0.9, eta=15),
                       mutation=PM(eta=20),
