@@ -76,7 +76,7 @@ def print_feedbarge(title, aqua_obj):
     print(' '*2, "fish feed harvest week per pen ", "{:10.3f}".format(aqua_obj.pen.fish_feed_harvest_week / aqua_obj.pen.pen_number), '[kg]')
     print(' '*2, "feedbarge number               ", "{:10.3f}".format(aqua_obj.pen.feedbarge_number), '[-]')
 
-def init_result(aqua_init_obj):
+def print_init_result(aqua_init_obj):
     print('+'*40) 
     if (aqua_init_obj.valid_point):
         print_objective("Initial",aqua_init_obj)
@@ -88,7 +88,7 @@ def init_result(aqua_init_obj):
         print('invalid init point')
     print('+'*40) 
 
-def optimize_result(aqua_opt_obj, x_list, x_unit, res_opt):
+def print_soo_optimize_result(aqua_opt_obj, x_list, x_unit, res_opt):
     if (aqua_opt_obj.valid_point):
         print('optimization success: ',res_opt.success)
         col_width = len(max(x_list, key=len))
@@ -96,6 +96,34 @@ def optimize_result(aqua_opt_obj, x_list, x_unit, res_opt):
         print_bold("optimal design variable:")
         for i in range(len(x_list)):
             print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(res_opt.x[i]), x_unit[i])
+
+        print(' '*2, "pen number    ", "{:10.3f}".format(aqua_opt_obj.pen.pen_number), '[-]')
+        print("-"*40)
+        
+        print_location("deployment",aqua_opt_obj)
+        print_objective("optimal",aqua_opt_obj)
+        print_P_rated("optimal",aqua_opt_obj)
+        print_price_breakdown("optimal",aqua_opt_obj)
+        print_ineq_cons("optimal",aqua_opt_obj)
+        print_carrying_capacity("optimal",aqua_opt_obj)
+        print_feedbarge("optimal",aqua_opt_obj)
+        print_energy_storage("optimal",aqua_opt_obj)
+    else:
+        print('invalid optimized point')
+    print('+'*40) 
+
+def print_moo_optimize_result(aqua_opt_obj, x_list, x_unit, moo_res_opt):
+    if (aqua_opt_obj.valid_point):
+        if moo_res_opt is None:
+            print('optimization success: False')
+        else:
+            print('optimization success: True')
+
+        col_width = len(max(x_list, key=len))
+        
+        print_bold("optimal design variable:")
+        for i in range(len(x_list)):
+            print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(moo_res_opt.X[i]), x_unit[i])
 
         print(' '*2, "pen number    ", "{:10.3f}".format(aqua_opt_obj.pen.pen_number), '[-]')
         print("-"*40)

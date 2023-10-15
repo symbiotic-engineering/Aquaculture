@@ -24,6 +24,10 @@ def cumsum_with_limits_nb(values, uplimit):
             sum_val = uplimit
     return res
 
+# ============================================================================ #
+#                       Wave Energy Converter                                  #
+# ============================================================================ #
+
 class WEC:
     def __init__(self, wave, capture_width: Dict[str,float], 
                 capture_width_ratio_dict: Dict[str,float], 
@@ -128,6 +132,10 @@ class WEC:
         return P_rated
     '''
 
+# ============================================================================ #
+#                       Wave                                                   #
+# ============================================================================ #
+
 class Wave:
     def __init__(self, Hs, Te) -> None:
         self.Hs = Hs
@@ -140,6 +148,10 @@ class Wave:
         #P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (32 * pi)  #for regular wave
         P_wave = self.rho * self.g**2 * self.Hs**2 * self.Te  / (64 * pi)  * 0.001  # [kw] for irregular wave
         return P_wave
+
+# ============================================================================ #
+#                       Fish (Growth and Dissolved Oxygen)                     #
+# ============================================================================ #
 
 class Fish:
     def __init__(self, F_f, F_p, F_c, A_f, A_p, A_c, 
@@ -333,7 +345,11 @@ class Fish:
         plt.tight_layout()
         plt.show()
         return
-        
+
+# ============================================================================ #
+#         Aquacalture Farm (Net Pen, Feed Barge, Carrying Capacity)            #
+# ============================================================================ #
+         
 class Pen:
     def __init__(self, fish, D, H, Depth, SD, pen_number, spacing, 
                  temp, O2_in, U, salinity, permeability, bathymetry,
@@ -515,6 +531,10 @@ class Pen:
         
         return carrying_capacity
 
+# ============================================================================ #
+#                              Vessel Travel                                   #
+# ============================================================================ #
+
 class Vessel:
     def __init__(self, fuel_consump_rate, fuel_cost, 
                  captain_salary, crew_salary, crew_num, 
@@ -546,6 +566,10 @@ class Vessel:
         for i in range(self.lifetime):
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
         return cost_NPV #/ 1000000 #[M$]
+
+# ============================================================================ #
+#                       Diesel Generator                                       #
+# ============================================================================ #
 
 class DieselGen:
     def __init__(self, fuel_consump_rate, fuel_cost, eta, load_level, CapEx_ref, OpEx_ref, lifetime, discount_rate):
@@ -580,6 +604,10 @@ class DieselGen:
             cost_NPV += (self.OpEx) / ((1+self.discount_rate)**(i+1))
         return cost_NPV
 
+# ============================================================================ #
+#                              Energy Storage                                  #
+# ============================================================================ #
+
 class ES:
     def __init__(self, eta, CapEx_ref, OpEx_ref, lifetime, discount_rate, soc_uplimit, soc_downlimit):
         self.eta = eta
@@ -593,32 +621,6 @@ class ES:
         self.size = []
         self.total_size = []
         self.power = []
-    
-    # # Objective function to minimize battery size
-    # def sizing_objective(self, battery_size):
-    #     # Calculate the battery operation throughout the day
-    #     battery = battery_size * self.soc_uplimit  # Battery starts at full capacity
-    #     for diff in self.P_diff:
-    #         battery += diff  # Update battery capacity based on power difference
-    #         battery = min(max(battery, self.soc_downlimit * battery_size), self.soc_uplimit * battery_size)
-    #         # Ensure battery capacity stays within bounds
-    #     # The objective is to minimize battery size, so return the negative battery size
-    #     return battery
-
-    # def find_min_battery_size(self, initial_guess=1.0):
-    #     # Constraints: The battery size should be positive
-    #     constraints = [{'type': 'ineq', 'fun': lambda x: x}]
-
-    #     # Perform the optimization
-    #     result = minimize(self.sizing_objective, initial_guess, constraints=constraints)
-
-    #     # Extract the minimum required battery size from the result
-    #     if result.success:
-    #         min_battery_size = result.x[0]
-    #     else:
-    #         print("failed to size the required battery")
-    #         min_battery_size = initial_guess
-    #     return min_battery_size
 
     #Hourly Power for Energy Storage
     @property 
@@ -642,8 +644,6 @@ class ES:
         self.P_diff = P_diff
         self.size  = 0
         self.total_size = abs(np.min(self.P_stored_cum)) / (self.soc_uplimit - self.soc_downlimit)
-        #self.total_size = self.find_min_battery_size(initial_guess = 20000)
-        #print(self.total_size)
     
         self.size = self.total_size
         self.power = copy.deepcopy(self.P_stored_cum)

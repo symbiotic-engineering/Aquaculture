@@ -9,6 +9,14 @@ def obj(x_in, x_name, p_in):
     else:
         return aqua_obj.obj_func + 30000
 
+# multi-objective function
+def multi_obj(x_in, x_name, p_in: dict):
+    aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
+    if aqua_obj.valid_point:
+        return np.array(aqua_obj.multi_obj_func)
+    else:
+        return np.array([-1, -1])
+    
 def ineq_constraint(x_in, x_name, p_in):
     aqua_obj = Aqua_Obj(x_in, x_name, p_in) 
     if aqua_obj.valid_point: 
@@ -32,6 +40,10 @@ def obj_terms(x_in, x_name, p_in):
         return np.array([aqua_obj.obj_func, aqua_obj.cost_per_yield, aqua_obj.cost_NPV, aqua_obj.pen.fish_yield, aqua_obj.es.total_size]) #, aqua_obj.pen.cost_NPV, aqua_obj.wec.price
     else:
         return np.array([-1, -1, -1, -1, -1, -1])
+
+# ============================================================================ #
+#                       WPAF Problem Definition (OF, Constraint,...)           #
+# ============================================================================ #
 
 class Aqua_Obj(object):
     def __init__(self, x0, x_name, p):
@@ -81,6 +93,10 @@ class Aqua_Obj(object):
         return self.cost_per_yield / 10
     
     @property
+    def multi_obj_func(self):
+        return self.cost_per_yield / 10, -self.pen.fish_yield / 1000000
+    
+    @property
     def ineq_constraint(self):
         return [#self.P_gen_cons, 
                 self.fish_yield_cons, 
@@ -100,11 +116,6 @@ class Aqua_Obj(object):
     def cost_NPV_diesel(self): #net present value
         cost_NPV_diesel = self.vessel.cost_NPV + self.dieselgen.cost_NPV + self.pen.cost_NPV
         return cost_NPV_diesel
-    
-    #def fish_yield_func(self):
-    #    survival_rate = (1-self.fish.loss_rate) 
-    #    self.pen.fish_yield = self.pen.biomass * survival_rate 
-    #    return 
     
     def power(self):
         self.dieselgen.power(np.max(self.pen.power))
@@ -182,6 +193,10 @@ class Aqua_Obj(object):
         ax1.grid()
 
 
+# ============================================================================ #
+#                       Set Inputs to Objects Classes                          #
+# ============================================================================ #
+
 def input_merge(x_in, x_name, p):
     # merge input dicts
     
@@ -252,6 +267,9 @@ def input_merge(x_in, x_name, p):
 
     return wec, wave_in, pen, fish, vessel, es, dieselgen, valid_point, gis_data
 
+# ============================================================================ #
+#                       Define DVs and Parameters                              #
+# ============================================================================ #
 
 def variable_lookup(var_category_names):
     # input is a cell array containing some subset of the following categories:
@@ -389,6 +407,9 @@ def variable_lookup(var_category_names):
 
     return var_list
 
+# ============================================================================ #
+#            Define Values for Parameters and Initial Values for DVs           #
+# ============================================================================ #
 
 def default_values(var_category_names):
     vals = {}
@@ -522,6 +543,10 @@ def default_values(var_category_names):
 
     #assert(fieldnames(vals) == variable_lookup(var_category_names));
     return vals
+
+# ============================================================================ #
+#                       Define Bounds for DVs                                  #
+# ============================================================================ #
 
 def bnds_values(var_category_names):
     bnds = {}
