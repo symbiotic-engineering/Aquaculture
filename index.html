@@ -247,7 +247,7 @@
         function style_DistancetoPortContours_8_0() {
             return {
                 pane: 'pane_DistancetoPortContours_8',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -291,7 +291,7 @@
         function style_BathymetryContours_9_0() {
             return {
                 pane: 'pane_BathymetryContours_9',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -335,7 +335,7 @@
         function style_WavePeriodContours_10_0() {
             return {
                 pane: 'pane_WavePeriodContours_10',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -379,7 +379,7 @@
         function style_SignificantWaveHeightContours_11_0() {
             return {
                 pane: 'pane_SignificantWaveHeightContours_11',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -423,7 +423,7 @@
         function style_TemperatureContours_12_0() {
             return {
                 pane: 'pane_TemperatureContours_12',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -467,7 +467,7 @@
         function style_SalinityContours_13_0() {
             return {
                 pane: 'pane_SalinityContours_13',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -511,7 +511,7 @@
         function style_OxygenContours_14_0() {
             return {
                 pane: 'pane_OxygenContours_14',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -555,7 +555,7 @@
         function style_CurrentContours_15_0() {
             return {
                 pane: 'pane_CurrentContours_15',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -1945,12 +1945,14 @@
             '<img src="qgis2web/legend/DistancetoPortContours_8.png" /> Distance to Port Contours': layer_DistancetoPortContours_8
         });
         
+        var basemap = L.layerGroup({
+            '<img src="qgis2web/legend/StateBoundaries_17.png"/> State Boundaries': layer_StateBoundaries_17,
+            "CartoDB Positron Basemap":layer_CartoDBPositronBasemap_16
+        });
+        basemap.addTo(map);
+
         // Groups the other layers under each category
         var groupedOverlays = {
-            "Base Maps": {
-                '<img src="qgis2web/legend/StateBoundaries_17.png"/> State Boundaries': layer_StateBoundaries_17,
-                "CartoDB Positron Basemap":layer_CartoDBPositronBasemap_16,
-            },
             "Project Scope": {
                 '<img src="qgis2web/legend/SampledPoints_29.png" /> Sampled Points': layer_SampledPoints_29,
                 '<img src="qgis2web/legend/StateandFederalWaters_28.png" /> State and Federal Waters': layer_StateandFederalWaters_28
@@ -1980,7 +1982,8 @@
             }
         }
         var options = {
-            groupCheckboxes: true
+            groupCheckboxes: true,
+            autoZIndex: false
         };
         var layerControl = L.control.groupedLayers(baseMaps, groupedOverlays, options);
         map.addControl(layerControl);
