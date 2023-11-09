@@ -137,3 +137,6 @@ results/
 *.geojson
 *.png
 *.pdf
+*.csv
+*.zip
+*.xlsx

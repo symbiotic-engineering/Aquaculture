@@ -1,4 +1,4 @@
-from gis.gis_handler import GISHandler
+from gis_handler import GISHandler
 from optimization import OpData
 import optimization
 from utilities import *
@@ -17,36 +17,36 @@ all_vars_default = all_vars_default  #+ ['p_wave_vec']
 # with wave average data
 #all_vars_default = all_vars_default  + ['x_wave_ave']
 
-conditions = {'current [m/s]': 'gis/data/Surface Current (m-s).tif',
-              'oxygen [mg/l]': 'gis/data/Surface Oxygen (mg-l).tif',
-              'salinity [PSU]': 'gis/data/Surface Salinity (PSU).tif',
-              'temperature [°C]': 'gis/data/Surface Temperature (C).tif',
-              'period [s]': 'gis/data/Wave Energy Period (s).tif',
-              'height [m]': 'gis/data/Wave Significant Height (m).tif',
-              'bathymetry [m]': 'gis/data/Bathymetry (m).tif',
-              #'distance to shore [m]': 'gis/data/Distance to Shore (m).tif',
-              'distance to port [m]': 'gis/data/Distance to Port (m).tif'}
+conditions = {'current [m/s]': 'data/Surface Current (m-s).tif',
+              'oxygen [mg/l]': 'data/Surface Oxygen (mg-l).tif',
+              'salinity [PSU]': 'data/Surface Salinity (PSU).tif',
+              'temperature [°C]': 'data/Surface Temperature (C).tif',
+              'period [s]': 'data/Wave Energy Period (s).tif',
+              'height [m]': 'data/Wave Significant Height (m).tif',
+              'bathymetry [m]': 'data/Bathymetry (m).tif',
+              #'distance to shore [m]': 'data/Distance to Shore (m).tif',
+              'distance to port [m]': 'data/Distance to Port (m).tif'}
 
 # high fishing is above average, very high is more than one standard deviation above average
-conflicts = {'very high fishing traffic': 'gis/data/Very High Fishing Vessel Traffic.geojson',
+conflicts = {'very high fishing traffic': 'data/Very High Fishing Vessel Traffic.geojson',
 #            'high fishing traffic': 'data/High Fishing Vessel Traffic.geojson',
-             'marine protected areas': 'gis/data/Marine Protected Areas.geojson',
-             'danger zones': 'gis/data/Danger Zones and Restricted Areas.geojson',
-             'submarine': 'gis/data/Submarine Transit Lanes.geojson',
-             'torpex': 'gis/data/Cape Cod TORPEX.geojson',
-             'block island': 'gis/data/Block Island Renewable Energy Zone.geojson',
-             'ma wind': 'gis/data/MA Wind Energy Areas.geojson',
-             'wind lease': 'gis/data/Potential Wind Lease Areas.geojson',
-             'wind planning': 'gis/data/Wind Planning Areas.geojson',
-             'shipping': 'gis/data/Shipping Lanes.geojson'}
+             'marine protected areas': 'data/Marine Protected Areas.geojson',
+             'danger zones': 'data/Danger Zones and Restricted Areas.geojson',
+             'submarine': 'data/Submarine Transit Lanes.geojson',
+             'torpex': 'data/Cape Cod TORPEX.geojson',
+             'block island': 'data/Block Island Renewable Energy Zone.geojson',
+             'ma wind': 'data/MA Wind Energy Areas.geojson',
+             'wind lease': 'data/Potential Wind Lease Areas.geojson',
+             'wind planning': 'data/Wind Planning Areas.geojson',
+             'shipping': 'data/Shipping Lanes.geojson'}
 
-waters = "gis/data/Northeast State and Federal Waters.geojson"
+waters = "data/Northeast State and Federal Waters.geojson"
 
 handler = GISHandler(conditions, conflicts, waters)
 
 args_default = {}
-args_default['wave_data'] = "../Wave Data/32_43.49_-67.88_2009.csv"
-args_default['aqua_load'] = "../Aquaculture Load/Load 24 hour.xlsx"
+args_default['wave_data'] = "data/32_43.49_-67.88_2009.csv"
+args_default['aqua_load'] = "data/Load 24 hour.xlsx"
 args_default['fixed_num_pen'] = 12
 args_default['moo_n_obj'] = 2
 
