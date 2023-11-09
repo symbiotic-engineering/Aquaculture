@@ -82,20 +82,20 @@ class WPAF(object):
             self.env_bathymetry_min_cons = 1 #self.aqua.bathymetry - self.aqua.H - self.aqua.waterdepth_underpen_min
             self.env_bathymetry_max_cons = 1 #self.aqua.waterdepth_underpen_max + self.aqua.H - self.aqua.bathymetry
 
-            self.pen_ratio_low_cons = (self.aqua.netpen.D - 1.5*self.aqua.netpen.H) / self.aqua.netpen.D
-            self.pen_ratio_up_cons = (2*self.aqua.netpen.H - self.aqua.netpen.D) / (2*self.aqua.netpen.H)
+            # self.pen_ratio_low_cons = (self.aqua.netpen.D - 1.5*self.aqua.netpen.H) / self.aqua.netpen.D
+            # self.pen_ratio_up_cons = (2*self.aqua.netpen.H - self.aqua.netpen.D) / (2*self.aqua.netpen.H)
             # self.pen_ratio_cons = 1 #(self.aqua.netpen_geometry(self.aqua.netpen.D) - self.aqua.netpen.H) / self.aqua.netpen.D
 
             self.sustainable_power_operation_cons = (np.mean(self.wec.P_gen) - np.mean(self.aqua.power)) / np.mean(self.wec.P_gen)
         
     @property
     def obj_func(self):
-        return self.cost_per_yield
+        return self.cost_per_yield # -self.aqua.fish_yield / 1000000 #self.cost_NPV/100000000 #cost_per_yield
     
     @property
     def multi_obj_func(self):
-        return self.cost_per_yield, -self.aqua.fish_yield / 1000000
-        #return self.cost_NPV / 100000000, -self.aqua.fish_yield / 1000000
+        #return self.cost_per_yield, -self.aqua.fish_yield / 1000000
+        return self.cost_NPV / 100000000, -self.aqua.fish_yield / 1000000
     
     @property
     def ineq_constraint(self):
@@ -105,7 +105,7 @@ class WPAF(object):
                 # self.env_tempmin_cons, self.env_tempmax_cons, 
                 # self.env_salinitymin_cons, self.env_salinitymax_cons, 
                 # self.env_O2_min_cons, self.env_bathymetry_min_cons, self.env_bathymetry_max_cons,
-                self.pen_ratio_low_cons, self.pen_ratio_up_cons,
+                # self.pen_ratio_low_cons, self.pen_ratio_up_cons,
                 self.sustainable_power_operation_cons]
     
     # @property
@@ -260,7 +260,8 @@ def input_merge(x_in, x_name, p):
                 ins['O2_min'], ins['U_min'], ins['U_max'], ins['temp_min'], ins['temp_max'], 
                 ins['salinity_min'], ins['salinity_max'], ins['fish_life_cycle'], ins['fingerling_weight'], ins['fingerling_unit_cost'],
                 
-                ins['pen_diameter'], ins['pen_height'], ins['pen_depth'], ins['stock_density'], 
+                ins['pen_diameter'], #ins['pen_height'], 
+                ins['pen_depth'], ins['stock_density'], 
                 ins['num_pens'], ins['spacing'], ins['water_temp'], 
                 ins['O2_in'], ins['U'], ins['salinity'], ins['permeability'], ins['bathymetry'],
                 ins['pos_lat'], ins['pos_long'], 
@@ -300,7 +301,7 @@ def variable_lookup(var_category_names):
         
     if any('x_pen' in i for i in var_category_names):
         var_list.append('pen_diameter')
-        var_list.append('pen_height')
+        # var_list.append('pen_height')
         var_list.append('stock_density')
 
     if any('x_disc_pen' in i for i in var_category_names):
@@ -441,7 +442,7 @@ def default_values(var_category_names):
         
     if any('x_pen' in i for i in var_category_names):
         vals['pen_diameter'] = (30, '[m]') 
-        vals['pen_height'] = (15, '[m]')  
+        # vals['pen_height'] = (15, '[m]')  
         vals['stock_density'] = (20 , '[kg/m^3]')
    
     if any('x_disc_pen' in i for i in var_category_names):
@@ -574,7 +575,7 @@ def bnds_values(var_category_names):
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 45)      #[m]  (10, 45)
-        bnds['pen_height'] = (10, 45)        #[m]   (10, 30)
+        # bnds['pen_height'] = (10, 45)        #[m]   (10, 30)
         bnds['stock_density'] = (1, 20)     #[kg/m^3]  (10, 20)
     
     if any('x_disc_pen' in i for i in var_category_names):

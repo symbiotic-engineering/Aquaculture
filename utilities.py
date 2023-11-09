@@ -69,8 +69,8 @@ def print_ineq_cons(title,wpaf):
     print_bold(title+" constraints:")
     #print(' '*2, "normalized P_gen_cons              ", "{:10.3f}".format(wpaf.P_gen_cons), '[-]')
     print(' '*2, "normalized fish_yield_cons         ", "{:10.3f}".format(wpaf.fish_yield_cons), '[-]')
-    print(' '*2, "normalized pen_ratio_low_cons      ", "{:10.3f}".format(wpaf.pen_ratio_low_cons), '[-]')
-    print(' '*2, "normalized pen_ratio_up_cons       ", "{:10.3f}".format(wpaf.pen_ratio_up_cons), '[-]')
+    # print(' '*2, "normalized pen_ratio_low_cons      ", "{:10.3f}".format(wpaf.pen_ratio_low_cons), '[-]')
+    # print(' '*2, "normalized pen_ratio_up_cons       ", "{:10.3f}".format(wpaf.pen_ratio_up_cons), '[-]')
     print(' '*2, "sustainable_power_operation_cons   ", "{:10.3f}".format(wpaf.sustainable_power_operation_cons), '[-]')
     print("-"*40)
 
@@ -90,6 +90,12 @@ def print_location(title, wpaf):
 def print_energy_storage(title, wpaf):
     print_bold(title+" es size:")
     print(' '*2, "es size   ", "{:10.3f}".format(wpaf.es.total_size), '[kWh]')
+    print("-"*40)
+
+def print_netpen_parameter(title, wpaf):
+    print_bold(title+" netpen:")
+    print(' '*2, "pen number    ", "{:10.3f}".format(wpaf.aqua.pen_number), '[-]')
+    print(' '*2, "pen height    ", "{:10.3f}".format(wpaf.aqua.netpen.H), '[kWh]')
     print("-"*40)
 
 def print_feedbarge(title, wpaf):
@@ -119,13 +125,14 @@ def print_soo_optimize_result(wpaf_opt_obj, x_list, x_unit, res_opt):
         for i in range(len(x_list)):
             print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(res_opt.x[i]), x_unit[i])
 
-        print(' '*2, "pen number    ", "{:10.3f}".format(wpaf_opt_obj.aqua.pen_number), '[-]')
+        
         print("-"*40)
         
         print_objective("optimal",wpaf_opt_obj)
         print_P_rated("optimal",wpaf_opt_obj)
         print_price_breakdown("optimal",wpaf_opt_obj)
         print_ineq_cons("optimal",wpaf_opt_obj)
+        print_netpen_parameter("optimal",wpaf_opt_obj)
         print_location("deployment",wpaf_opt_obj)
         print_carrying_capacity("optimal",wpaf_opt_obj)
         print_feedbarge("optimal",wpaf_opt_obj)
@@ -145,15 +152,18 @@ def print_moo_optimize_result(wpaf_opt_obj, x_list, x_unit, moo_res_opt):
         
         print_bold("optimal design variable:")
         for i in range(len(x_list)):
-            print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(moo_res_opt.X[i]), x_unit[i])
+            try:
+                print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(moo_res_opt.X[i]), x_unit[i])
+            except:
+                print(' '*2, x_list[i], ' '*(col_width - len(x_list[i])) , "{:10.3f}".format(moo_res_opt.X[0][i]), x_unit[i])
 
-        print(' '*2, "pen number    ", "{:10.3f}".format(wpaf_opt_obj.aqua.pen_number), '[-]')
         print("-"*40)
         
         print_objective("optimal",wpaf_opt_obj)
         print_P_rated("optimal",wpaf_opt_obj)
         print_price_breakdown("optimal",wpaf_opt_obj)
         print_ineq_cons("optimal",wpaf_opt_obj)
+        print_netpen_parameter("optimal",wpaf_opt_obj)
         print_location("deployment",wpaf_opt_obj)
         print_carrying_capacity("optimal",wpaf_opt_obj)
         print_feedbarge("optimal",wpaf_opt_obj)

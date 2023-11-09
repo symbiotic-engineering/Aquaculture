@@ -47,8 +47,9 @@ handler = GISHandler(conditions, conflicts, waters)
 
 args_default = {}
 #args_default['wave_data'] = "../Wave Data/32_43.49_-67.88_2009.csv"
-args_default['wave_data'] = "../Wave Data/cwwcNDBCMet_e13b_a87a_95c5.csv"
-args_default['aqua_load'] = "../Aquaculture Load/Load 24 hour.xlsx"
+#args_default['wave_data'] = "../Wave Data/cwwcNDBCMet_e13b_a87a_95c5.csv"
+args_default['wave_data'] = "Input Data/Wave Data/cwwcNDBCMet_e13b_a87a_95c5.csv"
+args_default['aqua_load'] = "Input Data/Aquaculture Load Data/Load 24 hour.xlsx"
 args_default['fixed_num_pen'] = 12
 args_default['moo_n_obj'] = 2
 

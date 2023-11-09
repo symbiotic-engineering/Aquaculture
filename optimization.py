@@ -189,7 +189,10 @@ class mooProblem(ElementwiseProblem):
 
         self.op_obj = OpObj(x, self.x.name, self.p.nom_dict, self.max_iter)
         
-        f = self.op_obj.multi_obj_fun(x)[0:self.n_obj]
+        if (self.n_obj==1):
+            f = self.op_obj.obj_fun(x)
+        else:
+            f = self.op_obj.multi_obj_fun(x)[0:self.n_obj]
         
         g = -1 * modules.ineq_constraint(x, self.x.name, self.p.nom_dict)
 
@@ -202,14 +205,14 @@ def run_moo_optimization(n_obj, x_name, p_name, p_vals, all_vars, max_iter):
 
     problem = mooProblem(n_obj, x_name, p_name, p_vals, all_vars, max_iter)
     
-    algorithm = NSGA2(pop_size=100,       #150
-                      n_offsprings=30,   #60
+    algorithm = NSGA2(pop_size=100,       #100
+                      n_offsprings=30,   #30
                       sampling=FloatRandomSampling(),
                       crossover=SBX(prob=0.9, eta=15),
                       mutation=PM(eta=20),
                       eliminate_duplicates=True)
 
-    termination = get_termination("n_gen", 500) #700
+    termination = get_termination("n_gen", 500) #500
     
     res = min(problem,
               algorithm,

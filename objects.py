@@ -443,7 +443,8 @@ class Aqua:
                  salinity_min, salinity_max, fish_life_cycle,
                  fingerling_weight, fingerling_unit_cost,
 
-                 D, H, Depth, SD, pen_number, spacing, 
+                 D, #H, 
+                 Depth, SD, pen_number, spacing, 
                  temp, O2_in, U, salinity, permeability, bathymetry,
                  pos_lat, pos_long, 
                  pen_netting_CapEx_ref, pen_struct_CapEx_ref, feedbarge_CapEx_ref, feedbarge_OpEx_ref,
@@ -457,13 +458,16 @@ class Aqua:
                  t_feed, velocity, number_travel, distance
                  ):
         
+        self.netpen_ref_model()
+
         self.fish = Fish(F_f, F_p, F_c, A_f, A_p, A_c, 
                  O_f, O_p, O_c, C_f, C_p, C_c, 
                  P_f, P_p, tau, loss_rate, harvest_weight, 
                  O2_min, U_min, U_max, temp_min, temp_max, 
                  salinity_min, salinity_max, fish_life_cycle,
                  fingerling_weight, fingerling_unit_cost)
-
+        
+        H = self.netpen_geometry(D)
         self.netpen = NetPen(D, H)
         
         self.vessel = Vessel(fuel_consump_rate, fuel_cost, 
@@ -479,11 +483,6 @@ class Aqua:
         
         self.waterdepth_underpen_min = 20 # [m]
         self.waterdepth_underpen_max = 75 # [m]
-    
-        # self.netting_cost = []
-        # self.struct_cost = []
-        # self.netpen_geometry = []
-        self.netpen_ref_model()
 
         self.temp = temp
         self.O2_in = O2_in
