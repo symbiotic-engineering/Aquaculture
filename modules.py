@@ -499,7 +499,7 @@ def default_values(var_category_names):
         vals['float_diameter'] = (20, '[m]')
         vals['wec_CapEx_ref'] = (5142789, '[$]') #cost in 2023
         vals['wec_OpEx_ref'] = (123477, '[$]')   #cost in 2023
-        vals['lifetime'] = (20, '[year]')
+        vals['lifetime'] = (15, '[year]')        #it was 20 years before.
         vals['discount_rate'] = (0.07, '[-]')
         vals['P_wec_rated'] = (300, '[kW]')
         
@@ -574,7 +574,7 @@ def bnds_values(var_category_names):
         bnds['capture_width'] = (1, 100)      #[m] (1, 40)
     
     if any('x_pen' in i for i in var_category_names):
-        bnds['pen_diameter'] = (10, 45)      #[m]  (10, 45)
+        bnds['pen_diameter'] = (10, 45)      #[m]  (10, 45)  (1, 60)
         # bnds['pen_height'] = (10, 45)        #[m]   (10, 30)
         bnds['stock_density'] = (1, 20)     #[kg/m^3]  (10, 20)
     
