@@ -5,6 +5,7 @@ from utilities import *
 import copy
 import numpy as np
 import random
+from scipy.interpolate import interp1d
 #import importlib
 #importlib.reload(modules)
 
@@ -45,11 +46,18 @@ waters = "gis/data/Northeast State and Federal Waters.geojson"
 handler = GISHandler(conditions, conflicts, waters)
 
 args_default = {}
-args_default['wave_data'] = "../Wave Data/32_43.49_-67.88_2009.csv"
+#args_default['wave_data'] = "../Wave Data/32_43.49_-67.88_2009.csv"
+args_default['wave_data'] = "../Wave Data/cwwcNDBCMet_e13b_a87a_95c5.csv"
 args_default['aqua_load'] = "../Aquaculture Load/Load 24 hour.xlsx"
 args_default['fixed_num_pen'] = 12
 args_default['moo_n_obj'] = 2
 
+def interp_nans(y):
+    # Helper function to interpolate and extrapolate NaN values
+    x = np.arange(len(y))
+    nans = np.isnan(y)
+    interpolator = interp1d(x[~nans], y[~nans], kind="linear", fill_value="interpolate", assume_sorted=True)
+    return interpolator(x)
 
 def wpaf_single_opt(all_vars_in = None, args_in = None):
     if all_vars_in is not None:
@@ -123,18 +131,46 @@ def wpaf_opt(all_vars, args):
     
 
     if 'wave_data' in args:
-        df = pd.read_csv(args['wave_data'])
-        param.nom_dict['pos_lat'] = float(df['Latitude'][0])
-        param.nom_dict['pos_long'] = float(df['Longitude'][0])
 
-        df = pd.read_csv(args['wave_data'], skiprows=2)
-        wave_period = df['Energy Period']
-        wave_height = df['Significant Wave Height']
-        # noise= np.random.rand(8760)
-        # vec = 1.37 * np.ones(8760)
-        # vec[1000:1100] = 1.2
-        param.nom_dict['wave_height'] = np.array(wave_period.values) #vec + noise/10  #
-        param.nom_dict['wave_energy_period'] = np.array(wave_height.values)  #6.44 * np.ones(8760) #
+        ## Uncomment if using marine energy atlas data
+        # df = pd.read_csv(args['wave_data'])
+        # param.nom_dict['pos_lat'] = float(df['Latitude'][0])
+        # param.nom_dict['pos_long'] = float(df['Longitude'][0])
+
+        # df = pd.read_csv(args['wave_data'], skiprows=2)
+        # wave_period = df['Energy Period']
+        # wave_height = df['Significant Wave Height']
+
+        # wave_period = np.array(wave_period.values)
+        # wave_height = np.array(wave_height.values)
+
+        # param.nom_dict['wave_energy_period'] = wave_period #6.44 * np.ones(8760) #wave_period.mean() * np.ones(8760) 
+        # param.nom_dict['wave_height'] = wave_height  #wave_height.mean() * np.ones(8760) 
+        # param.nom_dict['water_temp'] = 10.29 * np.ones(8760)
+        
+
+        ## Uncomment if using Buoy measured data
+        df = pd.read_csv(args['wave_data'], skiprows=[1]) #skip the row of units
+        param.nom_dict['pos_lat'] = float(df['latitude'][0])
+        param.nom_dict['pos_long'] = float(df['longitude'][0])
+
+        df = df.interpolate("linear")
+       # df = pd.read_csv(args['wave_data'], skiprows=2)
+        wave_period = df['dpd'] #df['Energy Period']
+        wave_height = df['wvht'] #df['Significant Wave Height']
+        water_temp = df['wtmp']
+
+        param.nom_dict['wave_height'] = np.array(wave_height.values)[0:8760]
+        param.nom_dict['wave_energy_period'] = np.array(wave_period.values)[0:8760]
+        
+        water_temp_hourly = np.array(water_temp.values)[0:8760]
+        water_temp_hourly = np.array(water_temp_hourly).reshape((365, 24))
+        water_temp_daily = []
+        interval = 1 # Loop through the array by X-day intervals (7 days or weekly interval)
+        for i in range(0, 365, interval):
+            water_temp_avg = water_temp_hourly[i:i+interval].mean() #water_temp_hourly.mean()
+            water_temp_daily.extend([water_temp_avg] * interval)
+        param.nom_dict['water_temp'] = np.array(water_temp_daily)[0:365]
 
     if 'aqua_load' in args:
         df = pd.read_excel(args['aqua_load'])
