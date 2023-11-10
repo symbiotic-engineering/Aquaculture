@@ -114,7 +114,7 @@ def run_soo_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
     arguments = (x.name, p.nom_dict)
     cons = []
     cons.append({'type': 'ineq', 'fun': modules.ineq_constraint, 'args': arguments})
-    #cons.append({'type': 'eq', 'fun': modules.eq_constraint, 'args': arguments})
+    # cons.append({'type': 'eq', 'fun': modules.eq_constraint, 'args': arguments})
     
     for factor in range(len(x.bnds)):
         lower, upper = x.bnds[factor]
@@ -125,7 +125,7 @@ def run_soo_optimization(x_name, x_vals, p_name, p_vals, all_vars, max_iter):
         cons.append(l)
         cons.append(u)
 
-    options={"maxiter":max_iter, "ftol": 1e-8} #, 'eps': .5}  # "ftol": 1e-4 #, 'disp': True
+    options={"maxiter":max_iter, "ftol": 1e-12} #, 'eps': .5}  # "ftol": 1e-4 #, 'disp': True
     
     
     res = minimize(obj_fun, op_obj.x0, 
@@ -189,7 +189,10 @@ class mooProblem(ElementwiseProblem):
 
         self.op_obj = OpObj(x, self.x.name, self.p.nom_dict, self.max_iter)
         
-        f = self.op_obj.multi_obj_fun(x)[0:self.n_obj]
+        if (self.n_obj==1):
+            f = self.op_obj.obj_fun(x)
+        else:
+            f = self.op_obj.multi_obj_fun(x)[0:self.n_obj]
         
         g = -1 * modules.ineq_constraint(x, self.x.name, self.p.nom_dict)
 
@@ -202,14 +205,14 @@ def run_moo_optimization(n_obj, x_name, p_name, p_vals, all_vars, max_iter):
 
     problem = mooProblem(n_obj, x_name, p_name, p_vals, all_vars, max_iter)
     
-    algorithm = NSGA2(pop_size=100,       #50
-                      n_offsprings=30,   #10
+    algorithm = NSGA2(pop_size=100,       #100
+                      n_offsprings=30,   #30
                       sampling=FloatRandomSampling(),
                       crossover=SBX(prob=0.9, eta=15),
                       mutation=PM(eta=20),
                       eliminate_duplicates=True)
 
-    termination = get_termination("n_gen", 500) #50
+    termination = get_termination("n_gen", 500) #500
     
     res = min(problem,
               algorithm,
