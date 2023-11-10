@@ -17,30 +17,28 @@ all_vars_default = all_vars_default  #+ ['p_wave_vec']
 # with wave average data
 #all_vars_default = all_vars_default  + ['x_wave_ave']
 
-conditions = {'current [m/s]': 'data/Surface Current (m-s).tif',
-              'oxygen [mg/l]': 'data/Surface Oxygen (mg-l).tif',
-              'salinity [PSU]': 'data/Surface Salinity (PSU).tif',
-              'temperature [°C]': 'data/Surface Temperature (C).tif',
-              'period [s]': 'data/Wave Energy Period (s).tif',
-              'height [m]': 'data/Wave Significant Height (m).tif',
-              'bathymetry [m]': 'data/Bathymetry (m).tif',
-              #'distance to shore [m]': 'data/Distance to Shore (m).tif',
-              'distance to port [m]': 'data/Distance to Port (m).tif'}
+conditions = {'current [m/s]': 'data/Surface Currents m-s (NODP 2016).tif',
+              'oxygen [mg/l]': 'data/Surface Oxygen mg-l (NCEI 2019).tif',
+              'salinity [PSU]': 'data/Surface Salinity PSU (NCEI 2019).tif',
+              'temperature [°C]': 'data/Surface Temperature C (NODP 2016).tif',
+              'period [s]': 'data/Wave Energy Period s (NREL 2011).tif',
+              'height [m]': 'data/Significant Wave Height m (NREL 2011).tif',
+              'bathymetry [m]': 'data/Bathymetry Downsampled m (NGDC 1990).tif',
+              'distance to port [m]': 'data/Distance to Port m (OCM 2019).tif'}
 
 # high fishing is above average, very high is more than one standard deviation above average
-conflicts = {'very high fishing traffic': 'data/Very High Fishing Vessel Traffic.geojson',
-#            'high fishing traffic': 'data/High Fishing Vessel Traffic.geojson',
-             'marine protected areas': 'data/Marine Protected Areas.geojson',
-             'danger zones': 'data/Danger Zones and Restricted Areas.geojson',
-             'submarine': 'data/Submarine Transit Lanes.geojson',
-             'torpex': 'data/Cape Cod TORPEX.geojson',
-             'block island': 'data/Block Island Renewable Energy Zone.geojson',
-             'ma wind': 'data/MA Wind Energy Areas.geojson',
-             'wind lease': 'data/Potential Wind Lease Areas.geojson',
-             'wind planning': 'data/Wind Planning Areas.geojson',
-             'shipping': 'data/Shipping Lanes.geojson'}
+conflicts = {'very high fishing traffic': 'data/Very High Fishing Vessel Traffic (NODP 2022).geojson',
+             'marine protected areas': 'data/Marine Protected Areas (NMPAC 2020).geojson',
+             'danger zones': 'data/Danger Zones and Restricted Areas (OCM 2022).geojson',
+             'submarine': 'data/Submarine Transit Lanes (NODP 2016).geojson',
+             'torpex': 'data/Cape Cod TORPEX (NODP 2016).geojson',
+             'block island': 'data/Block Island Renewable Energy Zone (NODP 2010).geojson',
+             'ma wind': 'data/MA Wind Energy Areas (NODP 2015).geojson',
+             'wind lease': 'data/Potential Wind Lease Areas (BOEM 2023).geojson',
+             'wind planning': 'data/Wind Planning Areas (BOEM 2023).geojson',
+             'shipping': 'data/Shipping Lanes (OCS 2015).geojson'}
 
-waters = "data/Northeast State and Federal Waters.geojson"
+waters = "data/Northeast State and Federal Waters (OCM 2018).geojson"
 
 handler = GISHandler(conditions, conflicts, waters)
 
