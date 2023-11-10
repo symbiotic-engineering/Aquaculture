@@ -5,26 +5,32 @@ This folder contains all necessary data files for the Python handler and model i
 Due to space limitations on GitHub, these files are hosted externally on Zenodo and must be downloaded separately. The current files can be downloaded from [Zenodo](https://zenodo.org) and placed in this directory with the following paths:
 
     ### Conditions
-    /gis/data/Surface Current (m-s).tif
-    /gis/data/Surface Oxygen (mg-l).tif
-    /gis/data/Surface Salinity (PSU).tif
-    /gis/data/Surface Temperature (C).tif
-    /gis/data/Wave Energy Period (s).tif
-    /gis/data/Wave Significant Height (m).tif
-    /gis/data/Bathymetry (m).tif
-    /gis/data/Distance to Port (m).tif
+    /data/Surface Currents m-s (NODP 2016).tif
+    /data/Surface Oxygen mg-l (NCEI 2019).tif
+    /data/Surface Salinity PSU (NCEI 2019).tif
+    /data/Surface Temperature C (NODP 2016).tif
+    /data/Wave Energy Period s (NREL 2011).tif
+    /data/Significant Wave Height m (NREL 2011).tif
+    /data/Bathymetry Downsampled m (NGDC 1990).tif
+    /data/Distance to Port m (OCM 2019).tif
+    /data/Distance to Shore m (OCM 2018).tif
 
     ### Conflicts
-    /gis/data/Very High Fishing Vessel Traffic.geojson
-    /gis/data/Marine Protected Areas.geojson
-    /gis/data/Danger Zones and Restricted Areas.geojson
-    /gis/data/Submarine Transit Lanes.geojson
-    /gis/data/Cape Cod TORPEX.geojson
-    /gis/data/Block Island Renewable Energy Zone.geojson
-    /gis/data/MA Wind Energy Areas.geojson
-    /gis/data/Potential Wind Lease Areas.geojson
-    /gis/data/Wind Planning Areas.geojson
-    /gis/data/Shipping Lanes.geojson'
+    /data/Very High Fishing Vessel Traffic (NODP 2022).geojson
+    /data/High Fishing Vessel Traffic (NODP 2022).geojson
+    /data/Marine Protected Areas (NMPAC 2020).geojson
+    /data/Danger Zones and Restricted Areas (OCM 2022).geojson
+    /data/Submarine Transit Lanes (NODP 2016).geojson
+    /data/Cape Cod TORPEX (NODP 2016).geojson
+    /data/Block Island Renewable Energy Zone (NODP 2010).geojson
+    /data/MA Wind Energy Areas (NODP 2015).geojson
+    /data/Potential Wind Lease Areas (BOEM 2023).geojson
+    /data/Wind Planning Areas (BOEM 2023).geojson
+    /data/Shipping Lanes (OCS 2015).geojson
 
     ### Scope
-    /gis/data/Northeast State and Federal Waters.geojson
+    /data/Northeast State and Federal Waters (OCM 2018).geojson
+    
+    ### Time Series Information
+    /data/Load 24 hour.xlsx
+    /data/32_43.49_-67.88_2009.csv
