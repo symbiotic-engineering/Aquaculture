@@ -131,3 +131,12 @@ dmypy.json
 
 #ignore folders:
 results/
+
+# Ignore GIS data files and results
+*.tif
+*.geojson
+*.png
+*.pdf
+*.csv
+*.zip
+*.xlsx
