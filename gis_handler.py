@@ -1,5 +1,5 @@
 # Python GIS Handler
-# SEA Lab at Cornell University, last updated: 4/24/23
+# SEA Lab at Cornell University, last updated: 11/10/23
 
 # import necessary packages, namely geopandas and rasterio
 import geopandas as gpd
@@ -74,7 +74,7 @@ class GISHandler:
                 print('failed to read {} raster: {}'.format(key, error))
                 conditions['ok-conditions'] = False
         
-        self.points = self.points.append(conditions, ignore_index=True)
+        self.points.loc[len(self.points.index)] = conditions
         return self.points.iloc[-1:]
     
     def record(self, x, y, value):
@@ -86,7 +86,7 @@ class GISHandler:
             return self.points.loc[(self.points.x==x) & (self.points.y==y)]
         
         conditions = {'x': x, 'y': y, 'geometry': Point(x, y), 'result': value}
-        self.points = self.points.append(conditions, ignore_index=True)
+        self.points.loc[len(self.points.index)] = conditions
         return self.points.iloc[-1:]
     
     def query_grid(self, x_min, x_max, y_min, y_max, xy_delta):
