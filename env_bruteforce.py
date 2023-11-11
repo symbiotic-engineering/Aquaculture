@@ -13,10 +13,10 @@ class GeoData():
         self.points = gpd.GeoDataFrame(columns=['pos_long', 'pos_lat', 'geometry', 'ok-conditions', 'ok-scope', 'ok-conflicts', 'obj_func', 'valid_point'], geometry='geometry')
         
     def store_data(self, valid_point, gis_data, aqua_obj: Aqua_Obj):
-        point = Point(float(gis_data["x"]), float(gis_data["y"]))
-        data = {'pos_long': float(gis_data["x"]), 'pos_lat': float(gis_data["y"]), 'geometry': point, 
-                'ok-conditions': gis_data["ok-conditions"].bool(), 'ok-scope': gis_data["ok-scope"].bool(), 'ok-conflicts': gis_data["ok-conflicts"].bool(),
-                'valid_point': gis_data["ok-conditions"].bool() and gis_data["ok-scope"].bool() and gis_data["ok-conflicts"].bool()}
+        point = Point(float(gis_data["x"].iloc[0]), float(gis_data["y"].iloc[0]))
+        data = {'pos_long': float(gis_data["x"].iloc[0]), 'pos_lat': float(gis_data["y"].iloc[0]), 'geometry': point, 
+                'ok-conditions': gis_data["ok-conditions"].all(), 'ok-scope': gis_data["ok-scope"].all(), 'ok-conflicts': gis_data["ok-conflicts"].all(),
+                'valid_point': gis_data["ok-conditions"].all() and gis_data["ok-scope"].all() and gis_data["ok-conflicts"].all()}
         if valid_point:
             data['obj_func'] = aqua_obj.obj_func
             data['vessel_travel_cost_NPV [$]'] =  aqua_obj.vessel.cost_NPV
@@ -93,7 +93,7 @@ def env_bruteforce(all_vars, *args):
         for pos_lat in (lat_grid):
             for pos_long in (long_grid):
                 gis_data = handler.query(pos_long, pos_lat)
-                valid_point = gis_data["ok-conditions"].bool() and gis_data["ok-scope"].bool() #and gis_data["ok-conflicts"].bool()
+                valid_point = gis_data["ok-conditions"].all() and gis_data["ok-scope"].all() #and gis_data["ok-conflicts"].all()
                 #print(valid_point, 'lat=', pos_lat, 'long=', pos_long)
                 if valid_point:
                     x.nom_dict['pos_lat'] = pos_lat
@@ -113,7 +113,7 @@ def env_bruteforce(all_vars, *args):
                         
                         init_flag_total = 0
 
-                        if (gis_data["ok-conflicts"].bool()):
+                        if (gis_data["ok-conflicts"].all()):
                             if init_flag_without_conflict:
                                 best_x_without_conflict = copy.deepcopy(x)
                                 res_best_without_conflict = copy.deepcopy(aqua_obj.obj_func)
