@@ -71,7 +71,6 @@ class GISHandler:
                 if conditions[key] == 0: # yes, this assumes that zero is not a valid value. this is true for our current rasters, but isn't necessarily correct
                     conditions['ok-conditions'] = False
             except IndexError as error:
-                print('failed to read {} raster: {}'.format(key, error))
                 conditions['ok-conditions'] = False
         
         self.points.loc[len(self.points.index)] = conditions
