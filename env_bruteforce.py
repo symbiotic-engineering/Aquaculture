@@ -13,10 +13,10 @@ class GeoData():
         self.points = gpd.GeoDataFrame(columns=['pos_long', 'pos_lat', 'geometry', 'ok-conditions', 'ok-scope', 'ok-conflicts', 'obj_func', 'valid_point'], geometry='geometry')
         
     def store_data(self, valid_point, gis_data, aqua_obj: Aqua_Obj):
-        point = Point(float(gis_data["x"].iloc[0]), float(gis_data["y"].iloc[0]))
-        data = {'pos_long': float(gis_data["x"].iloc[0]), 'pos_lat': float(gis_data["y"].iloc[0]), 'geometry': point, 
-                'ok-conditions': gis_data["ok-conditions"].all(), 'ok-scope': gis_data["ok-scope"].all(), 'ok-conflicts': gis_data["ok-conflicts"].all(),
-                'valid_point': gis_data["ok-conditions"].all() and gis_data["ok-scope"].all() and gis_data["ok-conflicts"].all()}
+        point = Point(float(gis_data['x'].iloc[0]), float(gis_data['y'].iloc[0]))
+        data = {'pos_long': float(gis_data['x'].iloc[0]), 'pos_lat': float(gis_data['y'].iloc[0]), 'geometry': point, 
+                'ok-conditions': gis_data['ok-conditions'].all(), 'ok-scope': gis_data['ok-scope'].all(), 'ok-conflicts': gis_data['ok-conflicts'].all(),
+                'valid_point': gis_data['ok-conditions'].all() and gis_data['ok-scope'].all() and gis_data['ok-conflicts'].all()}
         if valid_point:
             data['obj_func'] = aqua_obj.obj_func
             data['vessel_travel_cost_NPV [$]'] =  aqua_obj.vessel.cost_NPV
@@ -55,7 +55,7 @@ def env_bruteforce(all_vars, *args):
     param_name = ['x_wec','x_type_wec', 'x_pen', 'gis_handler']
     param = OpData(param_name)
 
-    # WEC and Pen Parameters are defined by optimal results obtained by running "run_sim_wec" 
+    # WEC and Pen Parameters are defined by optimal results obtained by running 'run_sim_wec' 
     param.nom_dict['capture_width']=  np.NaN    #[m]
     param.nom_dict['pen_diameter']=   30       #[m]
     param.nom_dict['pen_height']=     15       #[m]
@@ -93,7 +93,7 @@ def env_bruteforce(all_vars, *args):
         for pos_lat in (lat_grid):
             for pos_long in (long_grid):
                 gis_data = handler.query(pos_long, pos_lat)
-                valid_point = gis_data["ok-conditions"].all() and gis_data["ok-scope"].all() #and gis_data["ok-conflicts"].all()
+                valid_point = gis_data['ok-conditions'].all() and gis_data['ok-scope'].all() #and gis_data['ok-conflicts'].all()
                 #print(valid_point, 'lat=', pos_lat, 'long=', pos_long)
                 if valid_point:
                     x.nom_dict['pos_lat'] = pos_lat
@@ -113,7 +113,7 @@ def env_bruteforce(all_vars, *args):
                         
                         init_flag_total = 0
 
-                        if (gis_data["ok-conflicts"].all()):
+                        if (gis_data['ok-conflicts'].all()):
                             if init_flag_without_conflict:
                                 best_x_without_conflict = copy.deepcopy(x)
                                 res_best_without_conflict = copy.deepcopy(aqua_obj.obj_func)
@@ -126,7 +126,7 @@ def env_bruteforce(all_vars, *args):
                 else:
                     data_history.store_data(valid_point, gis_data, None)
 
-    timestr = time.strftime("%Y%m%d_%H%M%S")
+    timestr = time.strftime('%Y%m%d_%H%M%S')
     filepath = 'results/env_bruteforce_' + timestr + '_' + str(grid_resolution) + '_' + str(aqua_obj.pen.n) + 'cages'
     data_history.savefile(filepath)
 
