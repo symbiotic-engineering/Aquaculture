@@ -115,15 +115,15 @@ def input_merge(x_in, x_name, p):
         else:
             print('GIS handler is needed!')
             exit()
-        p['U'] = float(gis_data["current [m/s]"])
-        p['O2_in'] = float(gis_data["oxygen [mg/l]"])
-        p['salinity'] = float(gis_data["salinity [PSU]"])
-        p['temp'] = float(gis_data["temperature [°C]"])
-        p['bathymetry'] = -float(gis_data["bathymetry [m]"])
-        p['wave_energy_period'] = float(gis_data["period [s]"])
-        p['wave_height'] = float(gis_data["height [m]"])
-        p['distance'] = float(gis_data["distance to port [m]"]) / 1000
-        valid_point = gis_data["ok-conditions"].bool() and gis_data["ok-scope"].bool() #and gis_data["ok-conflicts"].bool()
+        p['U'] = float(gis_data['current [m/s]'].iloc[0])
+        p['O2_in'] = float(gis_data['oxygen [mg/l]'].iloc[0])
+        p['salinity'] = float(gis_data['salinity [PSU]'].iloc[0])
+        p['temp'] = float(gis_data['temperature [C]'].iloc[0])
+        p['bathymetry'] = -float(gis_data['bathymetry [m]'].iloc[0])
+        p['wave_energy_period'] = float(gis_data['period [s]'].iloc[0])
+        p['wave_height'] = float(gis_data['height [m]'].iloc[0])
+        p['distance'] = float(gis_data['distance to port [m]'].iloc[0]) / 1000
+        valid_point = gis_data['ok-conditions'].all() and gis_data['ok-scope'].all() #and gis_data['ok-conflicts'].all()
     else:
         valid_point = True
 
