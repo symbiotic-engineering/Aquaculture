@@ -230,15 +230,15 @@ def input_merge(x_in, x_name, p):
             gis_data =  p['handler'].query(p['pos_long'], p['pos_lat']) #import_gis_data(x_in[0], x_in[1])
         
         duration = 8760
-        p['U'] = float(gis_data["current [m/s]"])
-        p['O2_in'] = float(gis_data["oxygen [mg/l]"])
-        p['salinity'] = float(gis_data["salinity [PSU]"])
-        #p['temp'] = float(gis_data["temperature [°C]"])
-        p['bathymetry'] = (-float(gis_data["bathymetry [m]"]))
-        p['distance'] = float(gis_data["distance to port [m]"]) / 1000
-        #p['wave_energy_period'] = np.ones(duration) * float(gis_data["period [s]"])
-        #p['wave_height'] = np.ones(duration) * float(gis_data["height [m]"])
-        valid_point = gis_data["ok-conditions"].bool() and gis_data["ok-scope"].bool() #and gis_data["ok-conflicts"].bool()
+        p['U'] = float(gis_data["current [m/s]"].iloc[0])
+        p['O2_in'] = float(gis_data["oxygen [mg/l]"].iloc[0])
+        p['salinity'] = float(gis_data["salinity [PSU]"].iloc[0])
+        #p['temp'] = float(gis_data["temperature [°C]"].iloc[0])
+        p['bathymetry'] = (-float(gis_data["bathymetry [m]"].iloc[0]))
+        p['distance'] = float(gis_data["distance to port [m]"].iloc[0]) / 1000
+        #p['wave_energy_period'] = np.ones(duration) * float(gis_data["period [s]"].iloc[0])
+        #p['wave_height'] = np.ones(duration) * float(gis_data["height [m]"].iloc[0])
+        valid_point = gis_data["ok-conditions"].all() and gis_data["ok-scope"].all() #and gis_data["ok-conflicts"].all()
     else:
         print('GIS handler is needed!')
         exit()

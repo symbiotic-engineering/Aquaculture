@@ -1,15 +1,12 @@
 # Python GIS Handler
-# SEA Lab at Cornell University, last updated: 11/10/23
+# SEA Lab at Cornell University, last updated: 11/11/23
 
 # import necessary packages, namely geopandas and rasterio
+import pandas as pd
 import geopandas as gpd
 import rasterio
 from shapely.geometry import Point
-import warnings
-from shapely.errors import ShapelyDeprecationWarning
 
-# ignore shapely 1.8 deprecation warnings
-warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 precision = 5 # precision of input coordinates to prevent duplicate calls, 5dec~1.1m
 
 class GISHandler:
@@ -68,13 +65,12 @@ class GISHandler:
             index = raster.index(x, y)
             try:
                 conditions[key] = raster.read(1)[index] # yes, by default this only reads the first band, but this is probably okay
-                if conditions[key] == 0: # yes, this assumes that zero is not a valid value. this is true for our current rasters, but isn't necessarily correct
-                    conditions['ok-conditions'] = False
-            except IndexError as error:
-                print('failed to read {} raster: {}'.format(key, error))
+            except IndexError:
+                conditions[key] = 0
+            if conditions[key] == 0: # assumes that zero is not a valid value, which isn't necessarily correct
                 conditions['ok-conditions'] = False
         
-        self.points.loc[len(self.points.index)] = conditions
+        self.points = pd.concat([self.points, pd.DataFrame([conditions])], ignore_index=True)
         return self.points.iloc[-1:]
     
     def record(self, x, y, value):
