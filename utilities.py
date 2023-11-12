@@ -44,9 +44,9 @@ def print_ineq_cons(title,aqua_obj):
 
 def print_point_validation(title,aqua_obj):
     print_bold(title+" location validation:")
-    print(' '*2, "conditions          ", aqua_obj.gis_data["ok-conditions"].bool())
-    print(' '*2, "scope               ", aqua_obj.gis_data["ok-scope"].bool())
-    print(' '*2, "conflicts           ", aqua_obj.gis_data["ok-conflicts"].bool())
+    print(' '*2, "conditions          ", aqua_obj.gis_data["ok-conditions"])
+    print(' '*2, "scope               ", aqua_obj.gis_data["ok-scope"])
+    print(' '*2, "conflicts           ", aqua_obj.gis_data["ok-conflicts"])
     
             
 def init_result(x0_init, x_name, p_init):

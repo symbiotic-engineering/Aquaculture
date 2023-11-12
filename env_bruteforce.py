@@ -37,7 +37,7 @@ class GeoData():
                 data[const_name]=aqua_obj.ineq_constraint[i]
                 data['valid_point'] = data['valid_point'] and (aqua_obj.ineq_constraint[i] >= 0)
 
-        self.points.loc[len(self.points.index)] = data
+        self.points = pd.concat([self.points, pd.DataFrame([data])], ignore_index=True)
     
     def savefile(self, name):
         self.points.to_file(name + '.geojson', driver='GeoJSON')
