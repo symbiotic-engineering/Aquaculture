@@ -2,7 +2,7 @@
 
 This folder contains all necessary data files for the Python handler and model including rasters of oceanic conditions, vectors of potential conflicts, and a vector file with the included state and federal waters.
 
-Due to space limitations on GitHub, these files are hosted externally on Zenodo and must be downloaded separately. The current files can be downloaded from [Zenodo](https://zenodo.org) and placed in this directory with the following paths:
+Due to space limitations on GitHub, these files are hosted externally on Zenodo and must be downloaded separately. The current files can be downloaded from [Zenodo](https://zenodo.org/records/10140826) but may have minor deviations from those initially used in published results due to additional pre-processing and scaling. Once downloaded, the files should be placed in this directory with the following paths:
 
     ### Conditions
     /data/Surface Currents m-s (NODP 2016).tif
@@ -30,7 +30,3 @@ Due to space limitations on GitHub, these files are hosted externally on Zenodo 
 
     ### Scope
     /data/Northeast State and Federal Waters (OCM 2018).geojson
-    
-    ### Time Series Information
-    /data/Load 24 hour.xlsx
-    /data/32_43.49_-67.88_2009.csv

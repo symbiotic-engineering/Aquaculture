@@ -1,5 +1,8 @@
+[![DOI](https://zenodo.org/badge/467335021.svg)](https://zenodo.org/doi/10.5281/zenodo.7633737)
+![GitHub](https://img.shields.io/github/license/symbiotic-engineering/aquaculture)
+
 # Aquaculture
-This repository contains an "Marine spatial planning of offshore aquaculture with co-located wave energy", simulated through Python.
+This repository contains a Python to model an offshore aquaculture farm with co-located wave energy converters and determine potential sites using marine spatial planning.
 
 ## File Structure
 This repository consists of the following files:
@@ -8,16 +11,16 @@ This repository consists of the following files:
 - optimization: scripts and functions to perform a single objective optimization using brute-force.
 - env_bruteforce: script to perform brute-force for defined net pen parmeters.
 - run_sim_env: top-level script to perform the "marine spatial planning" optimization code using default values for defined environment with rasters and vectors of data.
-- gis/gis_handler: object to handle connection between GIS data and Python functions
-- gis/gis_example: examples of how to use the GIS handler to query and save data
-- gis/data: GIS files used in analysis including conflicts (.geojson) and conditions (.tif)
+- gis_handler: object to handle connection between GIS data and Python functions
+- scripts/: relevant scripts including examples of how to use the GIS handler to query and save data
+- data/: GIS files used in analysis including conflicts (.geojson) and conditions (.tif) *(stored externally on Zenodo)*
 - requirements.txt: list of the required libraries.
 
 ## How to use
-In order to run the "Marine spatial planning" optimization code and find optimal location for wave-powered aquaculture farm (WPAF) for constant net pen within the Northeast U.S., you can open and run the run_sim_env (.ipynb) file. *Note:* because geospatial data files are uploaded using git lfs, you must clone the repository or download them individually instead of downloading the repository as a zip.
+Relevant data files must be first downloaded from the Zenodo at [https://zenodo.org/records/10140826](https://zenodo.org/records/10140826) and placed in the data folder of this repository. In order to run the marine spatial planning optimization code and find optimal location for wave-powered aquaculture farm (WPAF) for constant net pen within the Northeast U.S, open and run the run_sim_env (.ipynb) file.
 
 ## Dependencies
-Python 3.8.8 is used to develop this package. 
+Python 3.9.18 is used to develop this package.
 For other required libraries, please refer to requirements.txt file.
 
 ## Context
