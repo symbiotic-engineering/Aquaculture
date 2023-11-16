@@ -273,7 +273,7 @@ def default_values(var_category_names):
         vals['stock_density'] = (20 , '[kg/m^3]')
    
     if any('p_pen' in i for i in var_category_names):
-        vals['num_pens'] = (12, '[-]')  #{5, 12, 40}
+        vals['num_pens'] = (5, '[-]')  #{5, 12, 40}
         vals['spacing'] = (150, '[m]')
         vals['pen_depth'] = (10, '[m]')   
         vals['pen_unit_cost'] = (100, '[$/m^3]')    # 80 $/m^3 for net pen + 20 $/m^3 for mooring
@@ -305,7 +305,7 @@ def default_values(var_category_names):
         vals['float_diameter'] = (20, '[m]')
         vals['CapEx_ref'] = (4833448, '[$]')
         vals['OpEx_ref'] = (116050, '[$]')
-        vals['lifetime'] = (20, '[year]')
+        vals['lifetime'] = (15, '[year]')
         vals['discount_rate'] = (0.07, '[-]')
         
     if any('p_fish_salmon' in i for i in var_category_names):

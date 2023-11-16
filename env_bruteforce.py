@@ -56,10 +56,10 @@ def env_bruteforce(all_vars, *args):
     param = OpData(param_name)
 
     # WEC and Pen Parameters are defined by optimal results obtained by running 'run_sim_wec' 
-    param.nom_dict['capture_width']=  np.NaN    #[m]
-    param.nom_dict['pen_diameter']=   30       #[m]
-    param.nom_dict['pen_height']=     15       #[m]
-    param.nom_dict['stock_density']=  20       #[kg/m^3]
+    param.nom_dict['capture_width'] =  np.NaN   #[m]
+    param.nom_dict['pen_diameter']  =  30       #[m]
+    param.nom_dict['pen_height']    =  15       #[m]
+    param.nom_dict['stock_density'] =  15       #[kg/m^3]
     
     x.bnds_old = x.bnds
     x.bnds = [(38.4, 45.2), (-75.8, -65.7)]
