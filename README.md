@@ -24,7 +24,10 @@ Python 3.9.18 is used to develop this package.
 For other required libraries, please refer to requirements.txt file.
 
 ## Context
-The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab and has been submitted to the Oceans 2023.
+The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab and is published in the Oceans 2023.
+
+## Citation
+Hasankhani, A., Ewig, G., McCabe, R., Won, E. T., & Haji, M. (2023, June). Marine Spatial Planning of a Wave-Powered Offshore Aquaculture Farm in the Northeast US. In OCEANS 2023-Limerick (pp. 1-10). IEEE.
 
 ## Authors
 - Arezoo Hasankhani, ah844@cornell.edu (Point of contact)
