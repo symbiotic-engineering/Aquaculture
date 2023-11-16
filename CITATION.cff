@@ -1,23 +1,20 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Hasankhani"
-  given-names: "Arezoo"
-  orcid: "https://orcid.org/0000-0001-6254-9363"
 - family-names: "Ewig"
   given-names: "Gabriel"
   orcid: "https://orcid.org/0000-0003-2041-5169"
-- family-names: "McCabe"
-  given-names: "Rebecca"
-  orcid: "https://orcid.org/0000-0001-5108-998X"
+- family-names: "Hasankhani"
+  given-names: "Arezoo"
+  orcid: "https://orcid.org/0000-0001-6254-9363"
 - family-names: "Thome Won"
   given-names: "Eugene"
   orcid: "https://orcid.org/0000-0000-0000-0000"
 - family-names: "Haji"
   given-names: "Maha N."
   orcid: "https://orcid.org/0000-0002-2953-7253"
-title: "Marine Spatial Planning of a Wave-Powered Offshore Aquaculture Farm in the Northeast U.S."
-version: 1.0
+title: "Marine Spatial Planning Techniques with a Case Study on Wave-Powered Offshore Aquaculture Farms"
+version: 1.3
 doi: 10.5281/zenodo.7633738
-date-released: 2023-06-06
+date-released: ???
 url: "https://github.com/symbiotic-engineering/aquaculture"

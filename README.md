@@ -27,9 +27,8 @@ For other required libraries, please refer to requirements.txt file.
 The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab and has been submitted to the Oceans 2023.
 
 ## Authors
-- Arezoo Hasankhani, ah844@cornell.edu (Point of contact)
-- Gabriel Ewig, gre27@cornell.edu
-- Rebecca McCabe, rgm222@cornell.edu 
+- Gabriel Ewig, gre27@cornell.edu (Point of contact)
+- Arezoo Hasankhani, ah844@cornell.edu
 - Eugene Thome Won, etw36@cornell.edu
 - Maha Haji, maha@cornell.edu
 
