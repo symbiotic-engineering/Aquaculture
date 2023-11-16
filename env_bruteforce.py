@@ -60,8 +60,10 @@ def env_bruteforce(all_vars, *args):
     param.nom_dict['pen_diameter']=   30       #[m]
     param.nom_dict['pen_height']=     15       #[m]
     param.nom_dict['stock_density']=  20       #[kg/m^3]
-
-    #print(x.bnds)
+    
+    x.bnds_old = x.bnds
+    x.bnds = [(38.4, 45.2), (-75.8, -65.7)]
+    print("Manually replaced {} with new bounds of {} to match previously calculated points.".format(x.bnds_old, x.bnds))
 
     if 'grid_resolution' in args[0]:
         grid_resolution = args[0]['grid_resolution']
