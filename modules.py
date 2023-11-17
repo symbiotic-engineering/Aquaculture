@@ -95,7 +95,7 @@ class WPAF(object):
     @property
     def multi_obj_func(self):
         #return self.cost_per_yield, -self.aqua.fish_yield / 1000000
-        return self.cost_NPV / 100000000, -self.aqua.fish_yield / 1000000
+        return self.cost_NPV / 100000000, -self.levelized_fish_yield / 10000000
     
     @property
     def ineq_constraint(self):
@@ -123,13 +123,17 @@ class WPAF(object):
         return cost_NPV_diesel
     
     @property
-    def cost_per_yield(self): #net present value
-       # cost_per_yield = self.cost_NPV / (self.aqua.fish_yield * self.aqua.lifetime)
-
+    def levelized_fish_yield(self): #net present value
         PVIF_sum = 0 # present value interest factor (PVIF)
         for i in range(self.aqua.lifetime):
             PVIF_sum += 1 / ((1+self.aqua.discount_rate)**(i+1))
-        cost_per_yield = self.cost_NPV / (self.aqua.fish_yield * PVIF_sum)
+        levelized_fish_yield = (self.aqua.fish_yield * PVIF_sum)
+        return levelized_fish_yield
+    
+    @property
+    def cost_per_yield(self): #net present value
+       # cost_per_yield = self.cost_NPV / (self.aqua.fish_yield * self.aqua.lifetime)
+        cost_per_yield = self.cost_NPV / self.levelized_fish_yield
         return cost_per_yield
     
     def power(self):
