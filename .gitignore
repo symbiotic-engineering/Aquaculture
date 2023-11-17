@@ -128,3 +128,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .DS_Store
+
+#ignore folders:
+archived_results/
+gis_backup/
+
+# added for GIS
+*.tif.aux.xml
+*.zip
+*.geojson
+*.tif
