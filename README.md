@@ -30,7 +30,6 @@ The project is part of research in the Symbiotic Engineering Analysis (SEA) Lab 
 
 ## Authors
 - Arezoo Hasankhani, ah844@cornell.edu (Point of contact)
-- Gabriel Ewig, gre27@cornell.edu
 - Eugene Thome Won, etw36@cornell.edu
 - Maha Haji, maha@cornell.edu
 
