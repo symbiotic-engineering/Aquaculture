@@ -138,4 +138,5 @@ gis_backup/
 *.zip
 *.geojson
 *.tif
-
+*.csv
+*.xlsx
