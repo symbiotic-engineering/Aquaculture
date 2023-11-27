@@ -130,13 +130,12 @@ dmypy.json
 .DS_Store
 
 #ignore folders:
-results/
+archived_results/
+gis_backup/
 
-# Ignore GIS data files and results
-*.tif
-*.geojson
-*.png
-*.pdf
-*.csv
+# added for GIS
+*.tif.aux.xml
 *.zip
-*.xlsx
+*.geojson
+*.tif
+

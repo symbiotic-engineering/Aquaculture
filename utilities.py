@@ -8,10 +8,11 @@ def print_bold(str):
 
 def print_objective(title, wpaf):
     print_bold(title+" objective function terms:")
-    print(' '*2, "Objective_func", "{:10.3f}".format(wpaf.obj_func))
-    print(' '*2, "cost per yield", "{:10.3f}".format(wpaf.cost_per_yield), '[$ / kg]')
-    print(' '*2, "NPV           ", "{:10.3f}".format(wpaf.cost_NPV / 1000000), '[Million $]')
-    print(' '*2, "fish yield    ", "{:10.3f}".format(wpaf.aqua.fish_yield / 1000000), '[kilo Tonne]')
+    print(' '*2, "Objective_func       ", "{:10.3f}".format(wpaf.obj_func))
+    print(' '*2, "cost per yield       ", "{:10.3f}".format(wpaf.cost_per_yield), '[$ / kg]')
+    print(' '*2, "NPV                  ", "{:10.3f}".format(wpaf.cost_NPV / 1000000), '[Million $]')
+    print(' '*2, "levelized fish yield ", "{:10.3f}".format(wpaf.levelized_fish_yield / 1000000), '[kilo Tonne]')
+    print(' '*2, "annual fish yield    ", "{:10.3f}".format(wpaf.aqua.fish_yield / 1000000), '[kilo Tonne]')
     print("-"*40)
 
 def print_P_rated(title, wpaf):
