@@ -307,6 +307,7 @@ def variable_lookup(var_category_names):
         var_list.append('pen_diameter')
         # var_list.append('pen_height')
         var_list.append('stock_density')
+        #var_list.append('kelp_yield')
 
     if any('x_disc_pen' in i for i in var_category_names):
         var_list.append('num_pens')

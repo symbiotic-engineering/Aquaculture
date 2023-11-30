@@ -18,29 +18,29 @@ all_vars_default = all_vars_default  #+ ['p_wave_vec']
 # with wave average data
 #all_vars_default = all_vars_default  + ['x_wave_ave']
 
-conditions = {'current [m/s]': 'Input Data/gis data/Surface Currents m-s (NODP 2016).tif',
-              'oxygen [mg/l]': 'Input Data/gis data/Surface Oxygen mg-l (NCEI 2019).tif',
-              'salinity [PSU]': 'Input Data/gis data/Surface Salinity PSU (NCEI 2019).tif',
-              'temperature [C]': 'Input Data/gis data/Surface Temperature C (NODP 2016).tif',
-              'period [s]': 'Input Data/gis data/Wave Energy Period s (NREL 2011).tif',
-              'height [m]': 'Input Data/gis data/Significant Wave Height m (NREL 2011).tif',
-              'bathymetry [m]': 'Input Data/gis data/Bathymetry Downsampled m (NGDC 1990).tif',
-              'distance to port [m]': 'Input Data/gis data/Distance to Port m (OCM 2019).tif'}
+conditions = {'current [m/s]': 'data/Surface Currents m-s (NODP 2016).tif',
+              'oxygen [mg/l]': 'data/Surface Oxygen mg-l (NCEI 2019).tif',
+              'salinity [PSU]': 'data/Surface Salinity PSU (NCEI 2019).tif',
+              'temperature [C]': 'data/Surface Temperature C (NODP 2016).tif',
+              'period [s]': 'data/Wave Energy Period s (NREL 2011).tif',
+              'height [m]': 'data/Significant Wave Height m (NREL 2011).tif',
+              'bathymetry [m]': 'data/Bathymetry Downsampled m (NGDC 1990).tif',
+              'distance to port [m]': 'data/Distance to Port m (OCM 2019).tif'}
 
 # high fishing is above average, very high is more than one standard deviation above average
-conflicts = {'very high fishing traffic': 'Input Data/gis data/Very High Fishing Vessel Traffic (NODP 2022).geojson',
-#            'high fishing traffic': 'Input Data/gis data/High Fishing Vessel Traffic (NODP 2022).geojson',
-             'marine protected areas': 'Input Data/gis data/Marine Protected Areas (NMPAC 2020).geojson',
-             'danger zones': 'Input Data/gis data/Danger Zones and Restricted Areas (OCM 2022).geojson',
-             'submarine': 'Input Data/gis data/Submarine Transit Lanes (NODP 2016).geojson',
-             'torpex': 'Input Data/gis data/Cape Cod TORPEX (NODP 2016).geojson',
-             'block island': 'Input Data/gis data/Block Island Renewable Energy Zone (NODP 2010).geojson',
-             'ma wind': 'Input Data/gis data/MA Wind Energy Areas (NODP 2015).geojson',
-             'wind lease': 'Input Data/gis data/Potential Wind Lease Areas (BOEM 2023).geojson',
-             'wind planning': 'Input Data/gis data/Wind Planning Areas (BOEM 2023).geojson',
-             'shipping': 'Input Data/gis data/Shipping Lanes (OCS 2015).geojson'}
+conflicts = {'very high fishing traffic': 'data/Very High Fishing Vessel Traffic (NODP 2022).geojson',
+#            'high fishing traffic': 'data/High Fishing Vessel Traffic (NODP 2022).geojson',
+             'marine protected areas': 'data/Marine Protected Areas (NMPAC 2020).geojson',
+             'danger zones': 'data/Danger Zones and Restricted Areas (OCM 2022).geojson',
+             'submarine': 'data/Submarine Transit Lanes (NODP 2016).geojson',
+             'torpex': 'data/Cape Cod TORPEX (NODP 2016).geojson',
+             'block island': 'data/Block Island Renewable Energy Zone (NODP 2010).geojson',
+             'ma wind': 'data/MA Wind Energy Areas (NODP 2015).geojson',
+             'wind lease': 'data/Potential Wind Lease Areas (BOEM 2023).geojson',
+             'wind planning': 'data/Wind Planning Areas (BOEM 2023).geojson',
+             'shipping': 'data/Shipping Lanes (OCS 2015).geojson'}
 
-waters = 'Input Data/gis data/Northeast State and Federal Waters (OCM 2018).geojson'
+waters = 'data/Northeast State and Federal Waters (OCM 2018).geojson'
 
 handler = GISHandler(conditions, conflicts, waters)
 
