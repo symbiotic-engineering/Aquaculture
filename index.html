@@ -555,7 +555,7 @@
         function style_CurrentContours_15_0() {
             return {
                 pane: 'pane_CurrentContours_15',
-                opacity: 1,
+                opacity: 0.75,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -666,6 +666,20 @@
         });
         bounds_group.addLayer(layer_StateBoundaries_17);
         map.addLayer(layer_StateBoundaries_17);
+
+        map.createPane('labels');
+        map.getPane('labels').style.zIndex = 650;
+        map.getPane('labels').style.pointerEvents = 'none';
+        
+        var positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', {
+        attribution: '©OpenStreetMap, ©CartoDB'
+        }).addTo(map);
+
+        var positronLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png', {
+        attribution: '©OpenStreetMap, ©CartoDB',
+        pane: 'labels'
+        }).addTo(map);
+
         function pop_ShippingLanes_18(feature, layer) {
             layer.on({
                 mouseout: function(e) {
@@ -719,7 +733,7 @@
             }
         }
         map.createPane('pane_ShippingLanes_18');
-        map.getPane('pane_ShippingLanes_18').style.zIndex = 418;
+        map.getPane('pane_ShippingLanes_18').style.zIndex = 448;
         map.getPane('pane_ShippingLanes_18').style['mix-blend-mode'] = 'normal';
         var layer_ShippingLanes_18 = new L.geoJson.multiStyle(json_ShippingLanes_18, {
             attribution: '',
@@ -835,7 +849,7 @@
             }
         }
         map.createPane('pane_WindPlanningAreas_19');
-        map.getPane('pane_WindPlanningAreas_19').style.zIndex = 419;
+        map.getPane('pane_WindPlanningAreas_19').style.zIndex = 449;
         map.getPane('pane_WindPlanningAreas_19').style['mix-blend-mode'] = 'normal';
         var layer_WindPlanningAreas_19 = new L.geoJson.multiStyle(json_WindPlanningAreas_19, {
             attribution: '',
@@ -972,7 +986,7 @@
             }
         }
         map.createPane('pane_PotentialWindLeaseAreas_20');
-        map.getPane('pane_PotentialWindLeaseAreas_20').style.zIndex = 420;
+        map.getPane('pane_PotentialWindLeaseAreas_20').style.zIndex = 450;
         map.getPane('pane_PotentialWindLeaseAreas_20').style['mix-blend-mode'] = 'normal';
         var layer_PotentialWindLeaseAreas_20 = new L.geoJson.multiStyle(json_PotentialWindLeaseAreas_20, {
             attribution: '',
@@ -1070,7 +1084,7 @@
             }
         }
         map.createPane('pane_MAWindEnergyAreas_21');
-        map.getPane('pane_MAWindEnergyAreas_21').style.zIndex = 421;
+        map.getPane('pane_MAWindEnergyAreas_21').style.zIndex = 451;
         map.getPane('pane_MAWindEnergyAreas_21').style['mix-blend-mode'] = 'normal';
         var layer_MAWindEnergyAreas_21 = new L.geoJson.multiStyle(json_MAWindEnergyAreas_21, {
             attribution: '',
@@ -1180,7 +1194,7 @@
             }
         }
         map.createPane('pane_BlockIslandRenewableEnergyZone_22');
-        map.getPane('pane_BlockIslandRenewableEnergyZone_22').style.zIndex = 422;
+        map.getPane('pane_BlockIslandRenewableEnergyZone_22').style.zIndex = 452;
         map.getPane('pane_BlockIslandRenewableEnergyZone_22').style['mix-blend-mode'] = 'normal';
         var layer_BlockIslandRenewableEnergyZone_22 = new L.geoJson.multiStyle(json_BlockIslandRenewableEnergyZone_22, {
             attribution: '',
@@ -1263,7 +1277,7 @@
             }
         }
         map.createPane('pane_SubmarineTransitLanes_23');
-        map.getPane('pane_SubmarineTransitLanes_23').style.zIndex = 423;
+        map.getPane('pane_SubmarineTransitLanes_23').style.zIndex = 453;
         map.getPane('pane_SubmarineTransitLanes_23').style['mix-blend-mode'] = 'normal';
         var layer_SubmarineTransitLanes_23 = new L.geoJson.multiStyle(json_SubmarineTransitLanes_23, {
             attribution: '',
@@ -1361,7 +1375,7 @@
             }
         }
         map.createPane('pane_DangerZonesandRestrictedAreas_24');
-        map.getPane('pane_DangerZonesandRestrictedAreas_24').style.zIndex = 424;
+        map.getPane('pane_DangerZonesandRestrictedAreas_24').style.zIndex = 454;
         map.getPane('pane_DangerZonesandRestrictedAreas_24').style['mix-blend-mode'] = 'normal';
         var layer_DangerZonesandRestrictedAreas_24 = new L.geoJson.multiStyle(json_DangerZonesandRestrictedAreas_24, {
             attribution: '',
@@ -1513,7 +1527,7 @@
             }
         }
         map.createPane('pane_CapeCodTORPEX_25');
-        map.getPane('pane_CapeCodTORPEX_25').style.zIndex = 425;
+        map.getPane('pane_CapeCodTORPEX_25').style.zIndex = 455;
         map.getPane('pane_CapeCodTORPEX_25').style['mix-blend-mode'] = 'normal';
         var layer_CapeCodTORPEX_25 = new L.geoJson.multiStyle(json_CapeCodTORPEX_25, {
             attribution: '',
@@ -1671,7 +1685,7 @@
             }
         }
         map.createPane('pane_MarineProtectedAreas_26');
-        map.getPane('pane_MarineProtectedAreas_26').style.zIndex = 426;
+        map.getPane('pane_MarineProtectedAreas_26').style.zIndex = 456;
         map.getPane('pane_MarineProtectedAreas_26').style['mix-blend-mode'] = 'normal';
         var layer_MarineProtectedAreas_26 = new L.geoJson.multiStyle(json_MarineProtectedAreas_26, {
             attribution: '',
@@ -1730,7 +1744,7 @@
             }
         }
         map.createPane('pane_VeryHighFishingVesselTraffic_27');
-        map.getPane('pane_VeryHighFishingVesselTraffic_27').style.zIndex = 427;
+        map.getPane('pane_VeryHighFishingVesselTraffic_27').style.zIndex = 457;
         map.getPane('pane_VeryHighFishingVesselTraffic_27').style['mix-blend-mode'] = 'normal';
         var layer_VeryHighFishingVesselTraffic_27 = new L.geoJson.multiStyle(json_VeryHighFishingVesselTraffic_27, {
             attribution: '',
