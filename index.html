@@ -247,7 +247,7 @@
         function style_DistancetoPortContours_8_0() {
             return {
                 pane: 'pane_DistancetoPortContours_8',
-                opacity: 1,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -291,7 +291,7 @@
         function style_BathymetryContours_9_0() {
             return {
                 pane: 'pane_BathymetryContours_9',
-                opacity: 1,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -335,7 +335,7 @@
         function style_WavePeriodContours_10_0() {
             return {
                 pane: 'pane_WavePeriodContours_10',
-                opacity: 1,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -379,7 +379,7 @@
         function style_SignificantWaveHeightContours_11_0() {
             return {
                 pane: 'pane_SignificantWaveHeightContours_11',
-                opacity: 1,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -423,7 +423,7 @@
         function style_TemperatureContours_12_0() {
             return {
                 pane: 'pane_TemperatureContours_12',
-                opacity: 1,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -467,7 +467,7 @@
         function style_SalinityContours_13_0() {
             return {
                 pane: 'pane_SalinityContours_13',
-                opacity: 1,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -511,7 +511,7 @@
         function style_OxygenContours_14_0() {
             return {
                 pane: 'pane_OxygenContours_14',
-                opacity: 1,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -555,7 +555,7 @@
         function style_CurrentContours_15_0() {
             return {
                 pane: 'pane_CurrentContours_15',
-                opacity: 0.75,
+                opacity: 0.5,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
@@ -1516,13 +1516,16 @@
         function style_CapeCodTORPEX_25_1() {
             return {
                 pane: 'pane_CapeCodTORPEX_25',
+                stroke: false,
                 opacity: 1,
                 color: 'rgba(165,63,43,1.0)',
                 dashArray: '',
                 lineCap: 'square',
                 lineJoin: 'bevel',
                 weight: 1.0,
-                fillOpacity: 0,
+                fill: false,
+                fillOpacity: 1,
+                fillColor: 'rgba(165,63,43,1.0)',
                 interactive: false,
             }
         }
