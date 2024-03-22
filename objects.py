@@ -36,7 +36,7 @@ class WEC:
                 wec_type: str,
                 capacity_factor,
                 eta, float_diameter,
-                CapEx_ref, OpEx_ref,
+                #CapEx_ref, OpEx_ref,
                 lifetime, discount_rate, P_wec_rated):
         
         self.wave = Wave(Hs, Tp)
@@ -49,8 +49,8 @@ class WEC:
         self.eta = eta
         self.beta_wec = 0.95 * 0.98  #For RM3 (device availability * transmission efficiency)
         self.float_diameter = float_diameter
-        self.CapEx_ref = CapEx_ref
-        self.OpEx_ref = OpEx_ref
+        # self.CapEx_ref = CapEx_ref
+        # self.OpEx_ref = OpEx_ref
         self.lifetime = lifetime
         self.discount_rate = discount_rate
         self.P_wec_rated = P_wec_rated
@@ -65,6 +65,20 @@ class WEC:
     @property
     def P_ave(self):
         return self.AEP / 8766 / self.wec_number  #[kW]
+
+    @property
+    def CapEx_ref(self):
+        array_scale = [1, 10, 50, 100]
+        CapEx_array_scale = np.array([61140, 21400, 14490, 13630]) * 300 * 1.29 #'[$/wec_number]'  # inflation rate from 2014 to 2023 = 1.29                                                                           
+        f = np.poly1d(np.polyfit(array_scale, CapEx_array_scale, 2))
+        return f(self.wec_number)
+
+    @property
+    def OpEx_ref(self):
+        array_scale = [1, 10, 50, 100]
+        OpEx_array_scale = np.array([4070, 1150, 460, 330]) * 300 * 1.29 #'[$/wec_number]'  # inflation rate from 2014 to 2023 = 1.29                                                                           
+        f = np.poly1d(np.polyfit(array_scale, OpEx_array_scale, 2))
+        return f(self.wec_number)
     
     @property
     def price(self):

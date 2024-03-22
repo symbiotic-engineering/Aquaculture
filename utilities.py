@@ -86,6 +86,7 @@ def print_location(title, wpaf):
     print(' '*2, "DO2 annual avg          ", "{:10.3f}".format(wpaf.aqua.O2_in), '[mg/l]')
     print(' '*2, "Salinity annual avg     ", "{:10.3f}".format(wpaf.aqua.salinity), '[PSU]')
     print(' '*2, "Current Speed annual avg", "{:10.3f}".format(wpaf.aqua.U), '[m/s]')
+    print(' '*2, "Distance to port        ", "{:10.3f}".format(wpaf.aqua.vessel.distance), '[km]')
     print("-"*40)
 
 def print_energy_storage(title, wpaf):

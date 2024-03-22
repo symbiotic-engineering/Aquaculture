@@ -199,7 +199,7 @@ class WPAF(object):
         ax1.plot(self.aqua.summer_feedbarge_power * self.aqua.feedbarge_number, label='summer_feedbarge_power') 
         ax1.plot(self.aqua.summer_lighting_power_per_kg * self.aqua.fish_yield, label='summer_lighting_power') 
         ax1.plot(self.aqua.summer_equipment_power_per_kg * self.aqua.fish_yield, label='summer_equipment_power') 
-        ax1.set(xlabel='time [hour]', ylabel='power')
+        ax1.set(xlabel='time [hour]', ylabel='power [kW]')
         ax1.legend()
         ax1.grid()
 
@@ -207,7 +207,7 @@ class WPAF(object):
         ax1.plot(self.aqua.winter_feedbarge_power * self.aqua.feedbarge_number, label='winter_feedbarge_power') 
         ax1.plot(self.aqua.winter_lighting_power_per_kg * self.aqua.fish_yield, label='winter_lighting_power') 
         ax1.plot(self.aqua.winter_equipment_power_per_kg * self.aqua.fish_yield, label='winter_equipment_power') 
-        ax1.set(xlabel='time [hour]', ylabel='power')
+        ax1.set(xlabel='time [hour]', ylabel='power [kW]')
         ax1.legend()
         ax1.grid()
 
@@ -256,7 +256,8 @@ def input_merge(x_in, x_name, p):
               ins['capture_width'], ins['capture_width_ratio_dict'],
               ins['wave_damping_dict'], ins['wec_type'],
               ins['capacity_factor'], ins['eta'], ins['float_diameter'],
-              ins['wec_CapEx_ref'], ins['wec_OpEx_ref'], ins['lifetime'], ins['discount_rate'], ins['P_wec_rated'])
+              #ins['wec_CapEx_ref'], ins['wec_OpEx_ref'], 
+              ins['lifetime'], ins['discount_rate'], ins['P_wec_rated'])
     
     aqua = Aqua(ins['F_f'], ins['F_p'], ins['F_c'], ins['A_f'], ins['A_p'], ins['A_c'],
                 ins['O_f'], ins['O_p'], ins['O_c'], ins['C_f'], ins['C_p'], ins['C_c'],
@@ -359,8 +360,8 @@ def variable_lookup(var_category_names):
         var_list.append('eta')
         var_list.append('capacity_factor')
         var_list.append('float_diameter')
-        var_list.append('wec_CapEx_ref')
-        var_list.append('wec_OpEx_ref')
+        # var_list.append('wec_CapEx_ref')
+        # var_list.append('wec_OpEx_ref')
         var_list.append('lifetime')
         var_list.append('discount_rate')
         var_list.append('P_wec_rated')
@@ -501,8 +502,8 @@ def default_values(var_category_names):
         vals['eta'] = (0.8,'[-]') 
         vals['capacity_factor'] = (0.3,'[-]') 
         vals['float_diameter'] = (20, '[m]')
-        vals['wec_CapEx_ref'] = (5142789, '[$]') #cost in 2023
-        vals['wec_OpEx_ref'] = (123477, '[$]')   #cost in 2023
+        # vals['wec_CapEx_ref'] = (5142789, '[$]') #cost in 2023
+        # vals['wec_OpEx_ref'] = (123477, '[$]')   #cost in 2023
         vals['lifetime'] = (15, '[year]')        #it was 20 years before.
         vals['discount_rate'] = (0.07, '[-]')
         vals['P_wec_rated'] = (300, '[kW]')
