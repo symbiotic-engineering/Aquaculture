@@ -11,12 +11,7 @@ from scipy.interpolate import interp1d
 
 max_iter = 2000
 
-all_vars_default = ['x_wec','x_type_wec','x_pen','p_pen','x_env','p_env','p_wec','p_fish_salmon','pos_env', 'gis_handler', 'p_vessel', 'x_disc_pen', 'p_es', 'p_diesel', 'p_pen_power', 'p_feedbarge']
-
-# with wave real data
-all_vars_default = all_vars_default  #+ ['p_wave_vec']
-# with wave average data
-#all_vars_default = all_vars_default  + ['x_wave_ave']
+all_vars_default = ['x_wec','x_type_wec','x_pen','p_pen','x_env','p_env','p_wec','p_fish_salmon','pos_env', 'gis_handler', 'p_vessel', 'x_disc_pen', 'x_es', 'p_es', 'p_diesel', 'p_pen_power', 'p_feedbarge']
 
 conditions = {'current [m/s]': 'Input Data/gis data/Surface Currents m-s (NODP 2016).tif',
               'oxygen [mg/l]': 'Input Data/gis data/Surface Oxygen mg-l (NCEI 2019).tif',
@@ -94,12 +89,8 @@ def wpaf_opt(all_vars, args):
     wec_types = ['point absorber'] #,'attenuator','terminator','point_absorber_RM3']
 
     # design variables and parameters
-    if 'p_wave_vec' in all_vars:
-        x_name = ['x_wec','x_pen', 'x_es']
-        p_name = ['x_type_wec', 'x_env', 'x_wave_env', 'gis_handler', 'pos_env', 'p_pen_power'] #,'x_env'
-    else: # es is not required when average wave is given
-        x_name = ['x_wec','x_pen']
-        p_name = ['x_type_wec', 'x_env', 'x_wave_env', 'x_es', 'gis_handler', 'pos_env', 'p_pen_power'] #,'x_env'
+    x_name = ['x_wec','x_pen', 'x_es']
+    p_name = ['x_type_wec', 'x_env', 'x_wave_env', 'gis_handler', 'pos_env', 'p_pen_power'] #,'x_env'
 
     x = OpData(x_name)
     if 'x0' in args:

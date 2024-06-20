@@ -37,7 +37,7 @@ def eq_constraint(x_in, x_name, p_in):
 def obj_terms(x_in, x_name, p_in):
     wpaf = WPAF(x_in, x_name, p_in) 
     if wpaf.valid_point: 
-        return np.array([wpaf.obj_func, wpaf.cost_per_yield, wpaf.cost_NPV, wpaf.aqua.fish_yield, wpaf.es.total_size]) #, wpaf.aqua.cost_NPV, wpaf.wec.price
+        return np.array([wpaf.obj_func, wpaf.cost_per_yield, wpaf.cost_NPV, wpaf.aqua.fish_yield, wpaf.es.size]) #, wpaf.aqua.cost_NPV, wpaf.wec.price
     else:
         return np.array([-1, -1, -1, -1, -1, -1])
 
@@ -62,12 +62,12 @@ class WPAF(object):
 
             self.wec.P_gen = self.power()
 
-            self.es.sizing_func(self.wec.P_gen - self.aqua.power)
+            self.es.power_func(self.wec.P_gen - self.aqua.power)
 
             #self.carrying_capacity = self.aqua.carrying_capacity(self.fish)
 
             # power supply constraint to ensure supply power demand of net pen
-            self.P_gen_cons = 1# min((self.wec.P_gen + self.es.power - self.aqua.power) / self.wec.P_gen)
+            self.P_gen_cons = min((self.wec.P_gen - self.es.power - self.aqua.power) / self.wec.P_gen)
 
             # fish yield constraint to ensure a healthy offshore environment
             self.fish_yield_cons = (self.aqua.carrying_capacity - self.aqua.fish_yield) / self.aqua.carrying_capacity
@@ -87,6 +87,8 @@ class WPAF(object):
             # self.pen_ratio_cons = 1 #(self.aqua.netpen_geometry(self.aqua.netpen.D) - self.aqua.netpen.H) / self.aqua.netpen.D
 
             self.sustainable_power_operation_cons = (np.mean(self.wec.P_gen) - np.mean(self.aqua.power)) / np.mean(self.wec.P_gen)
+            self.es_downlimit_cons = min(self.es.energy_cum - self.es.soc_downlimit * self.es.size) / self.es.size
+            self.es_sustainable_cons = (self.es.energy_cum[-1] - self.es.energy_cum[0]) / self.es.energy_cum[0]
         
     @property
     def obj_func(self):
@@ -99,14 +101,16 @@ class WPAF(object):
     
     @property
     def ineq_constraint(self):
-        return [#self.P_gen_cons, 
+        return [self.P_gen_cons, 
                 self.fish_yield_cons, 
                 # self.env_Umin_cons, self.env_Umax_cons,
                 # self.env_tempmin_cons, self.env_tempmax_cons, 
                 # self.env_salinitymin_cons, self.env_salinitymax_cons, 
                 # self.env_O2_min_cons, self.env_bathymetry_min_cons, self.env_bathymetry_max_cons,
                 # self.pen_ratio_low_cons, self.pen_ratio_up_cons,
-                self.sustainable_power_operation_cons]
+                self.sustainable_power_operation_cons,
+                self.es_downlimit_cons,
+                self.es_sustainable_cons]
     
     # @property
     # def eq_constraint(self):
@@ -175,10 +179,10 @@ class WPAF(object):
         #plt.ylim(-20, 20)
 
         ax3 = axes[4]
-        ax3.plot(self.es.power)
-        plt.axhline(y=self.es.total_size, color='r', linestyle='-')
-        plt.axhline(y=self.es.total_size * self.es.soc_uplimit, color='green', linestyle='dotted')
-        plt.axhline(y=self.es.total_size * self.es.soc_downlimit, color='green', linestyle='dotted')
+        ax3.plot(self.es.energy_cum)
+        plt.axhline(y=self.es.size, color='r', linestyle='-')
+        plt.axhline(y=self.es.size * self.es.soc_uplimit, color='green', linestyle='dotted')
+        plt.axhline(y=self.es.size * self.es.soc_downlimit, color='green', linestyle='dotted')
         ax3.set(xlabel='time [hour]', ylabel='P_stored (kW)')
         ax3.grid()
         
@@ -281,7 +285,8 @@ def input_merge(x_in, x_name, p):
                 ins['time_feed'], ins['vessel_velocity'], ins['travel_number'], ins['distance']
                 )
     
-    es = ES(ins['es_eta'], ins['es_CapEx_ref'], ins['es_OpEx_ref'], ins['lifetime'], ins['discount_rate'], ins['es_soc_uplimit'], ins['es_soc_downlimit'])
+    es = ES(ins['es_size'], ins['es_eta'], ins['es_CapEx_ref'], ins['es_OpEx_ref'], ins['lifetime'], 
+            ins['discount_rate'], ins['es_soc_uplimit'], ins['es_soc_downlimit'], ins['t_duration'])
 
     dieselgen = DieselGen(ins['diesel_fuel_consump_rate'], ins['diesel_fuel_cost'], ins['diesel_eta'], ins['diesel_load_level'],
                           ins['diesel_CapEx_ref'], ins['diesel_OpEx_ref'], ins['lifetime'], ins['discount_rate'])
@@ -408,12 +413,16 @@ def variable_lookup(var_category_names):
         var_list.append('travel_number')
         var_list.append('distance')
 
+    if any('x_es' in i for i in var_category_names):
+        var_list.append('es_size')
+
     if any('p_es' in i for i in var_category_names):
         var_list.append('es_eta')
         var_list.append('es_CapEx_ref')
         var_list.append('es_OpEx_ref')
         var_list.append('es_soc_uplimit')
         var_list.append('es_soc_downlimit')
+        var_list.append('t_duration')
 
     if any('p_diesel' in i for i in var_category_names):
         var_list.append('diesel_eta')
@@ -550,12 +559,17 @@ def default_values(var_category_names):
         vals['travel_number'] = (52,'[-]') # once per week for a year
         vals['distance'] = (76157.726562/1000, '[km]')
     
+    if any('x_es' in i for i in var_category_names):
+        vals['es_size'] = (15,'[kWh]')
+
     if any('p_es' in i for i in var_category_names):
         vals['es_eta'] = (0.92,'[-]')
         vals['es_soc_uplimit'] = (.85,'%')  #0.85
         vals['es_soc_downlimit'] = (.15,'%') #.15
         vals['es_CapEx_ref'] = (271 * 1.14, '[$/kWh]') #change to $ in 2023   * 1.14
         vals['es_OpEx_ref'] = (0, '[$/kWh]')
+        vals['t_duration'] = (4, '[h]')
+        
 
     if any('p_diesel' in i for i in var_category_names):
         vals['diesel_eta'] = (.40,'[%]')
@@ -576,7 +590,7 @@ def bnds_values(var_category_names):
     bnds = {}
 
     if any('x_wec' in i for i in var_category_names):
-        bnds['capture_width'] = (1, 100)      #[m] (1, 40)
+        bnds['capture_width'] = (1, 150)   #100   #[m] (1, 40)
     
     if any('x_pen' in i for i in var_category_names):
         bnds['pen_diameter'] = (10, 45)      #[m]  (10, 45)  (1, 60)
@@ -597,6 +611,6 @@ def bnds_values(var_category_names):
         bnds['wave_period'] = (1, 12)       #[s]
     
     if any('x_es' in i for i in var_category_names):
-        bnds['es_size'] = (5, 5000)          #[kWh] (5,500) without cost travel from shore
+        bnds['es_size'] = (1, 20)          #[kWh] (5,500) without cost travel from shore
 
     return bnds

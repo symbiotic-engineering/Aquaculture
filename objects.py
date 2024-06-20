@@ -783,7 +783,8 @@ class DieselGen:
 # ============================================================================ #
 
 class ES:
-    def __init__(self, eta, CapEx_ref, OpEx_ref, lifetime, discount_rate, soc_uplimit, soc_downlimit):
+    def __init__(self, size, eta, CapEx_ref, OpEx_ref, lifetime, discount_rate, soc_uplimit, soc_downlimit, t_duration):
+        self.size = size * 10000
         self.eta = eta
         self.CapEx_ref = CapEx_ref
         self.OpEx_ref = OpEx_ref
@@ -791,9 +792,11 @@ class ES:
         self.discount_rate = discount_rate
         self.soc_uplimit = soc_uplimit
         self.soc_downlimit = soc_downlimit
+        self.t_duration = t_duration
+        self.P_max = self.size / self.t_duration
         self.P_diff = []
-        self.size = []
-        self.total_size = []
+        # self.size = []
+        # self.total_size = []
         self.power = []
 
     #Hourly Power for Energy Storage
@@ -822,19 +825,34 @@ class ES:
         self.size = self.total_size
         self.power = copy.deepcopy(self.P_stored_cum)
     
+    def power_func(self, P_diff):
+        self.P_diff = P_diff
+        n = len(P_diff)
+        self.power = np.empty(n)
+        self.energy_cum = np.empty(n+1)  # cumulative energy of battery at each t
+        energy_diff = np.empty(n)
+        #self.energy_cum[0] = self.soc_uplimit * self.size  # assuming battery is full at the start
+
+        P_diff_clipped = np.clip(P_diff, -self.P_max, self.P_max)
+        P_diff_clipped_eta = np.where(P_diff_clipped > 0, P_diff_clipped * self.eta, P_diff_clipped * (1 / self.eta))
+        self.energy_cum = cumsum_with_limits_nb(np.concatenate(([self.soc_uplimit * self.size], P_diff_clipped_eta)), self.size * self.soc_uplimit)
+        energy_diff = np.diff(self.energy_cum)
+        self.power = np.where(energy_diff > 0, energy_diff / self.eta, energy_diff * self.eta)
+
+
     @property
     def soc(self):
-        soc = self.power / self.total_size
+        soc = self.energy_cum / self.size
         return soc
 
     @property
     def CapEx(self):
-        CapEx = self.total_size * self.CapEx_ref  # capital expense
+        CapEx = self.size * self.CapEx_ref  # capital expense
         return CapEx
     
     @property
     def OpEx(self):
-        OpEx = self.total_size * self.OpEx_ref  # operational expense 
+        OpEx = self.size * self.OpEx_ref  # operational expense 
         return OpEx
     
     @property
@@ -846,9 +864,9 @@ class ES:
     
     def plot_es(self):
         plt.plot(self.power)
-        plt.axhline(y=self.total_size, color='r', linestyle='-')
-        plt.axhline(y=self.total_size * self.soc_uplimit, color='green', linestyle='dotted')
-        plt.axhline(y=self.total_size * self.soc_downlimit, color='green', linestyle='dotted')
+        plt.axhline(y=self.size, color='r', linestyle='-')
+        plt.axhline(y=self.size * self.soc_uplimit, color='green', linestyle='dotted')
+        plt.axhline(y=self.size * self.soc_downlimit, color='green', linestyle='dotted')
         plt.axhline(y=0, color='r', linestyle='-')
         plt.ylabel('P_stored [W]')
         plt.xlabel('Time [h]')

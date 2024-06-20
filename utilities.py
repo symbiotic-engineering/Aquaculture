@@ -68,11 +68,15 @@ def print_price_breakdown(title, wpaf):
     
 def print_ineq_cons(title,wpaf):
     print_bold(title+" constraints:")
-    #print(' '*2, "normalized P_gen_cons              ", "{:10.3f}".format(wpaf.P_gen_cons), '[-]')
+    print(' '*2, "normalized P_gen_cons              ", "{:10.3f}".format(wpaf.P_gen_cons), '[-]')
     print(' '*2, "normalized fish_yield_cons         ", "{:10.3f}".format(wpaf.fish_yield_cons), '[-]')
     # print(' '*2, "normalized pen_ratio_low_cons      ", "{:10.3f}".format(wpaf.pen_ratio_low_cons), '[-]')
     # print(' '*2, "normalized pen_ratio_up_cons       ", "{:10.3f}".format(wpaf.pen_ratio_up_cons), '[-]')
     print(' '*2, "sustainable_power_operation_cons   ", "{:10.3f}".format(wpaf.sustainable_power_operation_cons), '[-]')
+
+    print(' '*2, "es_downlimit_cons                  ", "{:10.3f}".format(wpaf.es_downlimit_cons), '[-]')
+    print(' '*2, "es_sustainable_cons                ", "{:10.3f}".format(wpaf.es_sustainable_cons), '[-]')
+
     print("-"*40)
 
 def print_location(title, wpaf):
@@ -91,7 +95,7 @@ def print_location(title, wpaf):
 
 def print_energy_storage(title, wpaf):
     print_bold(title+" es size:")
-    print(' '*2, "es size   ", "{:10.3f}".format(wpaf.es.total_size), '[kWh]')
+    print(' '*2, "es size   ", "{:10.3f}".format(wpaf.es.size), '[kWh]')
     print("-"*40)
 
 def print_netpen_parameter(title, wpaf):
