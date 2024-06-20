@@ -6,6 +6,7 @@ This repository consists of the following files:
 - modules: scripts and functions to define "Wave-powered Aquaculture" optimization problem.
 - objects: scripts and functions to define aquaculture, wave energy converter, and energy storage objects and their parameters.
 - optimization: scripts and functions to perform a single objective optimization, and multi-objective optimization.
+- pen_model: scripts to define the pen model.
 - wpaf_opt: top-level script to perform the "WPAF" optimization code and set the required input files.
 - run_sim_soo_wpaf: top-level script to run the single objective optimization.
 - run_sim_moo_wpaf: top-level script to run the multi-objective optimization.
